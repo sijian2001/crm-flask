@@ -177,7 +177,10 @@ class TestCustomerViews:
             'email': 'inactive_edit@example.com'
         })
 
-        assert response.status_code == 302  # リダイレクト（編集不可）
+        # サービス層リファクタリング後は、エラーメッセージと共に同じページに戻る（200）
+        assert response.status_code == 200
+        response_text = response.get_data(as_text=True)
+        assert '無効化された顧客は編集できません' in response_text
 
     def test_customer_delete(self, authenticated_client, app):
         """顧客削除（無効化）のテスト"""
