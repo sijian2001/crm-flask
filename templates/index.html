@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}ホーム - CRM システム{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">CRM システムへようこそ</h1>
+            <p class="lead">Flask ベースの包括的な顧客関係管理システムです。</p>
+            <hr class="my-4">
+            {% if current_user.is_authenticated %}
+            <p>{{ current_user.username }}さん、お疲れ様です！</p>
+            <p>最終ログイン: {% if current_user.last_login %}{{ current_user.last_login.strftime('%Y年%m月%d日 %H:%M') }}{% else %}初回ログイン{% endif %}</p>
+            {% else %}
+            <p>顧客管理、製品管理、店舗管理、店員管理を統合的に行うためのWebアプリケーションです。</p>
+            <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">
+                <i class="fas fa-sign-in-alt"></i> ログインして開始
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_authenticated %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h2>主要機能</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">顧客管理</h5>
+                        <p class="card-text">顧客情報の登録・編集・削除</p>
+                        <a href="#" class="btn btn-outline-primary">利用予定</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-box fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">製品管理</h5>
+                        <p class="card-text">製品情報とカテゴリ管理</p>
+                        <a href="#" class="btn btn-outline-success">利用予定</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-store fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">店舗管理</h5>
+                        <p class="card-text">店舗情報と営業状況管理</p>
+                        <a href="#" class="btn btn-outline-warning">利用予定</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-tie fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">店員管理</h5>
+                        <p class="card-text">従業員情報と勤続管理</p>
+                        <a href="#" class="btn btn-outline-info">利用予定</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
