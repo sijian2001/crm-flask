@@ -4,6 +4,7 @@ from flask_login import LoginManager, login_required
 from config import Config
 from models import db, User
 from auth import auth
+from customers import customers
 
 def create_app():
     app = Flask(__name__)
@@ -31,6 +32,7 @@ def create_app():
 
     # Blueprintの登録
     app.register_blueprint(auth, url_prefix='/auth')
+    app.register_blueprint(customers, url_prefix='/customers')
 
     # メインルート
     @app.route('/')

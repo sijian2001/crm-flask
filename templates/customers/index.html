@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}顧客管理 - CRM システム{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-users"></i> 顧客管理
+            </h1>
+            <a href="{{ url_for('customers.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 新規登録
+            </a>
+        </div>
+
+        <!-- 検索フォーム -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('customers.index') }}">
+                    <div class="row">
+                        <div class="col-md-10">
+                            {{ search_form.search(class="form-control", value=search) }}
+                        </div>
+                        <div class="col-md-2">
+                            <div class="btn-group w-100">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search"></i> 検索
+                                </button>
+                                {% if search %}
+                                <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> クリア
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 顧客一覧 -->
+        {% if customers.items %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    {% if search %}
+                        「{{ search }}」の検索結果: {{ customers.total }}件
+                    {% else %}
+                        登録顧客: {{ customers.total }}件
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>顧客名</th>
+                            <th>メールアドレス</th>
+                            <th>会社名</th>
+                            <th>電話番号</th>
+                            <th>登録日</th>
+                            <th width="120">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers.items %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('customers.view', id=customer.id) }}" class="text-decoration-none">
+                                    <strong>{{ customer.full_name }}</strong>
+                                </a>
+                            </td>
+                            <td>{{ customer.email }}</td>
+                            <td>{{ customer.company or '-' }}</td>
+                            <td>{{ customer.phone or '-' }}</td>
+                            <td>{{ customer.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('customers.view', id=customer.id) }}"
+                                       class="btn btn-outline-info" title="詳細">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('customers.edit', id=customer.id) }}"
+                                       class="btn btn-outline-primary" title="編集">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ページネーション -->
+            {% if customers.pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="顧客一覧ページネーション">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if customers.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('customers.index', page=customers.prev_num, search=search) }}">
+                                <i class="fas fa-chevron-left"></i> 前へ
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in customers.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != customers.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('customers.index', page=page_num, search=search) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if customers.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('customers.index', page=customers.next_num, search=search) }}">
+                                次へ <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            {% if search %}
+            <h3>検索結果が見つかりませんでした</h3>
+            <p class="text-muted">「{{ search }}」に一致する顧客は登録されていません。</p>
+            <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-list"></i> 全顧客を表示
+            </a>
+            {% else %}
+            <h3>登録された顧客がありません</h3>
+            <p class="text-muted">新しい顧客を登録してください。</p>
+            <a href="{{ url_for('customers.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 顧客を登録
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
