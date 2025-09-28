@@ -20,6 +20,8 @@ class User(UserMixin, db.Model):
         self.username = username
         self.email = email
         self.set_password(password)
+        self.is_active = True
+        self.created_at = datetime.utcnow()
 
     def set_password(self, password):
         """パスワードをハッシュ化して保存"""
@@ -32,7 +34,6 @@ class User(UserMixin, db.Model):
     def update_last_login(self):
         """最終ログイン時刻を更新"""
         self.last_login = datetime.utcnow()
-        db.session.commit()
 
     def get_id(self):
         """Flask-Loginで必要なユーザーID取得メソッド"""

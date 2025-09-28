@@ -11,3 +11,7 @@ class Config:
     SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # Logging configuration
+    LOG_LEVEL = os.environ.get('LOG_LEVEL') or 'INFO'
+    LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s: %(message)s'

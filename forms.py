@@ -1,9 +1,10 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Email, Length, ValidationError
+from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp
 from models import User
 
-class LoginForm(FlaskForm):
+class BaseUserForm(FlaskForm):
+    """ユーザー関連フォームの基底クラス"""
     username = StringField(
         'ユーザー名',
         validators=[
@@ -13,6 +14,14 @@ class LoginForm(FlaskForm):
         render_kw={'placeholder': 'ユーザー名'}
     )
 
+    def validate_username(self, username):
+        """ユーザー名の重複チェック"""
+        user = User.query.filter_by(username=username.data).first()
+        if user is not None:
+            raise ValidationError('このユーザー名は既に使用されています。')
+
+class LoginForm(BaseUserForm):
+    """ログインフォーム"""
     password = PasswordField(
         'パスワード',
         validators=[
@@ -25,15 +34,12 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField('ログイン状態を保持する')
     submit = SubmitField('ログイン')
 
-class RegistrationForm(FlaskForm):
-    username = StringField(
-        'ユーザー名',
-        validators=[
-            DataRequired(message='ユーザー名を入力してください'),
-            Length(min=3, max=80, message='ユーザー名は3文字以上80文字以下で入力してください')
-        ],
-        render_kw={'placeholder': 'ユーザー名'}
-    )
+    def validate_username(self, username):
+        """ログインフォームではユーザー名重複チェックを無効化"""
+        pass
+
+class RegistrationForm(BaseUserForm):
+    """ユーザー登録フォーム"""
 
     email = StringField(
         'メールアドレス',
@@ -49,7 +55,8 @@ class RegistrationForm(FlaskForm):
         'パスワード',
         validators=[
             DataRequired(message='パスワードを入力してください'),
-            Length(min=4, message='パスワードは4文字以上で入力してください')
+            Length(min=8, message='パスワードは8文字以上で入力してください'),
+            Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)', message='英大文字、小文字、数字を含む必要があります')
         ],
         render_kw={'placeholder': 'パスワード'}
     )
@@ -63,12 +70,6 @@ class RegistrationForm(FlaskForm):
     )
 
     submit = SubmitField('登録')
-
-    def validate_username(self, username):
-        """ユーザー名の重複チェック"""
-        user = User.query.filter_by(username=username.data).first()
-        if user is not None:
-            raise ValidationError('このユーザー名は既に使用されています。')
 
     def validate_email(self, email):
         """メールアドレスの重複チェック"""

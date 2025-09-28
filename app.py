@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, render_template
 from flask_login import LoginManager, login_required
 from config import Config
@@ -7,6 +8,12 @@ from auth import auth
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # ログ設定初期化
+    logging.basicConfig(
+        level=getattr(logging, app.config['LOG_LEVEL']),
+        format=app.config['LOG_FORMAT']
+    )
 
     # データベース初期化
     db.init_app(app)
