@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, Optional
-from models import User, Customer
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, DecimalField, IntegerField, SelectField
+from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, Optional, NumberRange
+from models import User, Customer, Product, Category
 from customer_config import CustomerConfig
+from product_config import ProductConfig
 
 class BaseUserForm(FlaskForm):
     """ユーザー関連フォームの基底クラス"""
@@ -179,3 +180,252 @@ class CustomerSearchForm(FlaskForm):
 
     submit = SubmitField('検索')
     clear = SubmitField('クリア')
+
+
+class BaseCategoryForm(FlaskForm):
+    """カテゴリ関連フォームの基底クラス"""
+    name = StringField(
+        'カテゴリ名',
+        validators=[
+            DataRequired(message='カテゴリ名を入力してください'),
+            Length(min=1, max=ProductConfig.get_category_config()['name_max_length'],
+                   message=f'カテゴリ名は1文字以上{ProductConfig.get_category_config()["name_max_length"]}文字以下で入力してください')
+        ],
+        render_kw={'placeholder': 'カテゴリ名'}
+    )
+
+    description = TextAreaField(
+        '説明',
+        validators=[
+            Optional(),
+            Length(max=ProductConfig.get_category_config()['description_max_length'],
+                   message=f'説明は{ProductConfig.get_category_config()["description_max_length"]}文字以下で入力してください')
+        ],
+        render_kw={'placeholder': 'カテゴリの説明を入力してください', 'rows': 3}
+    )
+
+
+class CategoryForm(BaseCategoryForm):
+    """カテゴリ登録・編集フォーム"""
+    parent_id = SelectField(
+        '親カテゴリ',
+        validators=[Optional()],
+        coerce=int,
+        choices=[]
+    )
+
+    submit = SubmitField('保存')
+
+    def __init__(self, category=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.category = category
+
+        # 親カテゴリの選択肢を設定
+        self.parent_id.choices = [(0, '選択してください')]
+
+        # アクティブなカテゴリを取得（編集中のカテゴリの子孫は除外）
+        categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
+
+        if category:
+            # 編集時は自分自身とその子孫を除外
+            excluded_ids = {category.id}
+            excluded_ids.update(child.id for child in category.get_all_children())
+            categories = [c for c in categories if c.id not in excluded_ids]
+
+        for cat in categories:
+            self.parent_id.choices.append((cat.id, cat.full_path))
+
+    def validate_parent_id(self, parent_id):
+        """親カテゴリの妥当性チェック"""
+        if parent_id.data and parent_id.data != 0:
+            parent = Category.query.get(parent_id.data)
+            if not parent or not parent.is_active:
+                raise ValidationError('指定された親カテゴリが見つかりません。')
+
+
+class BaseProductForm(FlaskForm):
+    """製品関連フォームの基底クラス"""
+    name = StringField(
+        '製品名',
+        validators=[
+            DataRequired(message='製品名を入力してください'),
+            Length(min=1, max=ProductConfig.get_name_max_length(),
+                   message=f'製品名は1文字以上{ProductConfig.get_name_max_length()}文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '製品名'}
+    )
+
+    sku = StringField(
+        'SKU',
+        validators=[
+            DataRequired(message='SKUを入力してください'),
+            Length(min=1, max=ProductConfig.get_sku_max_length(),
+                   message=f'SKUは1文字以上{ProductConfig.get_sku_max_length()}文字以下で入力してください'),
+            Regexp(r'^[A-Za-z0-9_-]+$', message='SKUは英数字、ハイフン、アンダースコアのみ使用可能です')
+        ],
+        render_kw={'placeholder': 'PROD-001'}
+    )
+
+    description = TextAreaField(
+        '説明',
+        validators=[
+            Optional(),
+            Length(max=ProductConfig.get_description_max_length(),
+                   message=f'説明は{ProductConfig.get_description_max_length()}文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '製品の説明を入力してください', 'rows': 4}
+    )
+
+    price = DecimalField(
+        '価格',
+        validators=[
+            DataRequired(message='価格を入力してください'),
+            NumberRange(min=0, message='価格は0以上である必要があります')
+        ],
+        render_kw={'placeholder': '1000.00', 'step': '0.01', 'min': '0'}
+    )
+
+    category_id = SelectField(
+        'カテゴリ',
+        validators=[DataRequired(message='カテゴリを選択してください')],
+        coerce=int,
+        choices=[]
+    )
+
+
+class ProductForm(BaseProductForm):
+    """製品登録・編集フォーム"""
+    cost = DecimalField(
+        '原価',
+        validators=[
+            Optional(),
+            NumberRange(min=0, message='原価は0以上である必要があります')
+        ],
+        render_kw={'placeholder': '800.00', 'step': '0.01', 'min': '0'}
+    )
+
+    stock_quantity = IntegerField(
+        '在庫数量',
+        validators=[
+            DataRequired(message='在庫数量を入力してください'),
+            NumberRange(min=0, max=ProductConfig.get_validation_config()['stock_max_value'],
+                       message=f'在庫数量は0以上{ProductConfig.get_validation_config()["stock_max_value"]}以下である必要があります')
+        ],
+        render_kw={'placeholder': '100', 'min': '0'}
+    )
+
+    min_stock_level = IntegerField(
+        '最小在庫レベル',
+        validators=[
+            DataRequired(message='最小在庫レベルを入力してください'),
+            NumberRange(min=0, max=ProductConfig.get_validation_config()['stock_max_value'],
+                       message=f'最小在庫レベルは0以上{ProductConfig.get_validation_config()["stock_max_value"]}以下である必要があります')
+        ],
+        default=ProductConfig.get_default_min_stock_level(),
+        render_kw={'placeholder': str(ProductConfig.get_default_min_stock_level()), 'min': '0'}
+    )
+
+    submit = SubmitField('保存')
+
+    def __init__(self, product=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.product = product
+
+        # カテゴリの選択肢を設定
+        self.category_id.choices = [(0, 'カテゴリを選択してください')]
+        categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
+        for category in categories:
+            self.category_id.choices.append((category.id, category.full_path))
+
+    def validate_sku(self, sku):
+        """SKUの重複チェック"""
+        product = Product.query.filter_by(sku=sku.data).first()
+        if product and (not self.product or product.id != self.product.id):
+            raise ValidationError('このSKUは既に使用されています。')
+
+    def validate_category_id(self, category_id):
+        """カテゴリの妥当性チェック"""
+        if category_id.data == 0:
+            raise ValidationError('カテゴリを選択してください。')
+
+        category = Category.query.get(category_id.data)
+        if not category or not category.is_active:
+            raise ValidationError('指定されたカテゴリが見つかりません。')
+
+    def validate_min_stock_level(self, min_stock_level):
+        """最小在庫レベルの妥当性チェック"""
+        if self.stock_quantity.data and min_stock_level.data > self.stock_quantity.data:
+            raise ValidationError('最小在庫レベルは現在の在庫数量以下である必要があります。')
+
+
+class ProductSearchForm(FlaskForm):
+    """製品検索フォーム"""
+    search = StringField(
+        '検索',
+        validators=[Optional()],
+        render_kw={'placeholder': '製品名、SKU、説明で検索...'}
+    )
+
+    category_id = SelectField(
+        'カテゴリ',
+        validators=[Optional()],
+        coerce=int,
+        choices=[]
+    )
+
+    low_stock_only = BooleanField('在庫不足のみ表示')
+
+    submit = SubmitField('検索')
+    clear = SubmitField('クリア')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # カテゴリの選択肢を設定
+        self.category_id.choices = [(0, 'すべてのカテゴリ')]
+        categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
+        for category in categories:
+            self.category_id.choices.append((category.id, category.full_path))
+
+
+class StockUpdateForm(FlaskForm):
+    """在庫更新フォーム"""
+    stock_quantity = IntegerField(
+        '在庫数量',
+        validators=[
+            DataRequired(message='在庫数量を入力してください'),
+            NumberRange(min=0, max=ProductConfig.get_validation_config()['stock_max_value'],
+                       message=f'在庫数量は0以上{ProductConfig.get_validation_config()["stock_max_value"]}以下である必要があります')
+        ],
+        render_kw={'min': '0'}
+    )
+
+    submit = SubmitField('更新')
+
+
+class CategorySearchForm(FlaskForm):
+    """カテゴリ検索フォーム"""
+    search = StringField(
+        '検索',
+        validators=[Optional()],
+        render_kw={'placeholder': 'カテゴリ名、説明で検索...'}
+    )
+
+    parent_id = SelectField(
+        '親カテゴリ',
+        validators=[Optional()],
+        coerce=int,
+        choices=[]
+    )
+
+    submit = SubmitField('検索')
+    clear = SubmitField('クリア')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 親カテゴリの選択肢を設定
+        self.parent_id.choices = [(0, 'すべての親カテゴリ'), (-1, 'ルートカテゴリのみ')]
+        categories = Category.query.filter_by(is_active=True, parent_id=None).order_by(Category.name).all()
+        for category in categories:
+            self.parent_id.choices.append((category.id, category.name))

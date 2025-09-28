@@ -94,3 +94,15 @@ class CustomerConfig:
         if app_config:
             return app_config.get('CUSTOMER_ENABLE_AUDIT_LOG', cls.ENABLE_AUDIT_LOG)
         return cls.ENABLE_AUDIT_LOG
+
+    @classmethod
+    def init_app(cls, app):
+        """
+        Initialize configuration with Flask app
+
+        Args:
+            app: Flask application instance
+        """
+        # Customer configuration doesn't need special initialization
+        # This method is provided for consistency with ProductConfig
+        pass

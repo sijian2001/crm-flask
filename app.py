@@ -5,6 +5,9 @@ from config import Config
 from models import db, User
 from auth import auth
 from customers import customers
+from products import products
+from customer_config import CustomerConfig
+from product_config import ProductConfig
 
 def create_app():
     app = Flask(__name__)
@@ -30,9 +33,14 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
+    # 設定管理の初期化
+    CustomerConfig.init_app(app)
+    ProductConfig.init_app(app)
+
     # Blueprintの登録
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(customers, url_prefix='/customers')
+    app.register_blueprint(products, url_prefix='/products')
 
     # メインルート
     @app.route('/')
