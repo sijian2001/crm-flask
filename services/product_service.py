@@ -6,7 +6,8 @@ following the same architectural pattern as customer_service.py.
 """
 from typing import Optional, Tuple, List
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_, and_, desc, asc
+from sqlalchemy import or_, and_, desc, asc, func
+from sqlalchemy.orm import selectinload, subqueryload
 from models import db, Product, Category
 from product_config import ProductConfig
 
@@ -312,6 +313,9 @@ class CategoryService:
         """
         Get paginated categories with optional search and parent filtering
 
+        Optimized to prevent N+1 queries by using subqueryload for relationships
+        and calculating product_count efficiently.
+
         Args:
             page: Page number (1-based)
             per_page: Items per page
@@ -324,8 +328,17 @@ class CategoryService:
         if per_page is None:
             per_page = ProductConfig.get_default_per_page()
 
-        # Base query for active categories
-        query = Category.query.filter_by(is_active=True)
+        # Base query for active categories with eager loading
+        query = (
+            Category.query
+            .filter_by(is_active=True)
+            .options(
+                # Load parent relationship to avoid N+1 for full_path
+                selectinload(Category.parent),
+                # Load children relationship for hierarchy display
+                selectinload(Category.children)
+            )
+        )
 
         # Apply search filter
         if search and len(search.strip()) >= ProductConfig.get_search_min_length():
@@ -349,6 +362,38 @@ class CategoryService:
             per_page=per_page,
             error_out=False
         )
+
+    @staticmethod
+    def get_categories_with_product_counts(category_ids: List[int] = None) -> List[tuple]:
+        """
+        Get categories with their product counts in a single optimized query
+
+        This method prevents N+1 queries by using a single JOIN query to fetch
+        categories along with their product counts.
+
+        Args:
+            category_ids: Optional list of category IDs to filter
+
+        Returns:
+            List of tuples (category, product_count)
+        """
+        query = (
+            db.session.query(
+                Category,
+                func.count(Product.id).label('product_count')
+            )
+            .outerjoin(Product, and_(
+                Product.category_id == Category.id,
+                Product.is_active == True
+            ))
+            .filter(Category.is_active == True)
+            .group_by(Category.id)
+        )
+
+        if category_ids:
+            query = query.filter(Category.id.in_(category_ids))
+
+        return query.all()
 
     @staticmethod
     def get_category_by_id(category_id: int) -> Optional[Category]:

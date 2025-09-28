@@ -17,7 +17,8 @@ from utils.error_handlers import (
     handle_customer_operation_error,
     log_customer_access,
     CustomerOperationResult,
-    validate_customer_operation
+    validate_product_operation,
+    validate_category_operation
 )
 import logging
 
@@ -126,7 +127,7 @@ def edit(id: int):
         abort(404)
 
     # 製品の操作権限チェック
-    is_valid, error_message = validate_customer_operation(product, 'edit')
+    is_valid, error_message = validate_product_operation(product, 'edit')
     if not is_valid:
         handle_customer_operation_error('update', error_message, product.name)
         return redirect(url_for('products.view', id=id))
@@ -170,7 +171,7 @@ def delete(id: int):
         abort(404)
 
     # 製品の操作権限チェック
-    is_valid, error_message = validate_customer_operation(product, 'delete')
+    is_valid, error_message = validate_product_operation(product, 'delete')
     if not is_valid:
         handle_customer_operation_error('deletion', error_message, product.name)
         return redirect(url_for('products.view', id=id))
@@ -216,7 +217,7 @@ def update_stock(id: int):
         abort(404)
 
     # 製品の操作権限チェック
-    is_valid, error_message = validate_customer_operation(product, 'edit')
+    is_valid, error_message = validate_product_operation(product, 'stock_update')
     if not is_valid:
         handle_customer_operation_error('update', error_message, product.name)
         return redirect(url_for('products.view', id=id))
@@ -270,6 +271,15 @@ def categories_index():
         parent_id=parent_filter
     )
 
+    # N+1問題を防ぐため、表示されるカテゴリの製品数を一括取得
+    category_ids = [category.id for category in category_pagination.items]
+    if category_ids:
+        categories_with_counts = CategoryService.get_categories_with_product_counts(category_ids)
+        # カテゴリIDをキーとした製品数のマップを作成
+        product_count_map = {category.id: count for category, count in categories_with_counts}
+    else:
+        product_count_map = {}
+
     logger.info(f'Category list accessed by user {current_user.username}, page {page}, search: "{search}"')
 
     return render_template(
@@ -277,7 +287,8 @@ def categories_index():
         categories=category_pagination,
         search_form=search_form,
         search=search,
-        parent_id=parent_id
+        parent_id=parent_id,
+        product_count_map=product_count_map
     )
 
 
@@ -310,7 +321,7 @@ def create_category():
 @products.route('/categories/<int:id>')
 @login_required
 def view_category(id: int):
-    """カテゴリ詳細ページ"""
+    """カテゴリ詳細ページ（N+1問題対策済み）"""
     category = CategoryService.get_category_by_id(id)
     if not category:
         abort(404)
@@ -325,10 +336,19 @@ def view_category(id: int):
         category_id=id
     )
 
+    # 子カテゴリの製品数を一括取得（N+1問題対策）
+    child_category_ids = [child.id for child in category.children if child.is_active]
+    if child_category_ids:
+        children_with_counts = CategoryService.get_categories_with_product_counts(child_category_ids)
+        child_product_count_map = {category.id: count for category, count in children_with_counts}
+    else:
+        child_product_count_map = {}
+
     return render_template(
         'products/categories/view.html',
         category=category,
-        products=products_pagination
+        products=products_pagination,
+        child_product_count_map=child_product_count_map
     )
 
 
@@ -341,8 +361,9 @@ def edit_category(id: int):
         abort(404)
 
     # カテゴリの操作権限チェック
-    if not category.is_active:
-        handle_customer_operation_error('update', '無効化されたカテゴリは編集できません。', category.name)
+    is_valid, error_message = validate_category_operation(category, 'edit')
+    if not is_valid:
+        handle_customer_operation_error('update', error_message, category.name)
         return redirect(url_for('products.view_category', id=id))
 
     form = CategoryForm(category=category, obj=category)
@@ -380,8 +401,9 @@ def delete_category(id: int):
         abort(404)
 
     # カテゴリの操作権限チェック
-    if not category.is_active:
-        handle_customer_operation_error('deletion', '指定されたカテゴリは既に無効化されています。', category.name)
+    is_valid, error_message = validate_category_operation(category, 'delete')
+    if not is_valid:
+        handle_customer_operation_error('deletion', error_message, category.name)
         return redirect(url_for('products.view_category', id=id))
 
     # サービス層を使用してカテゴリを無効化

@@ -89,7 +89,7 @@
                                     <span class="badge bg-info">{{ category.full_path }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-primary">{{ category.product_count }}製品</span>
+                                    <span class="badge bg-primary">{{ product_count_map.get(category.id, category.product_count) }}製品</span>
                                 </td>
                                 <td>
                                     {% if category.description %}

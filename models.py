@@ -2,6 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import func, select
 
 db = SQLAlchemy()
 
@@ -134,10 +136,20 @@ class Category(db.Model):
             return f"{self.parent.full_path} > {self.name}"
         return self.name
 
-    @property
+    @hybrid_property
     def product_count(self):
         """このカテゴリの製品数を取得"""
         return Product.query.filter_by(category_id=self.id, is_active=True).count()
+
+    @product_count.expression
+    def product_count(cls):
+        """SQLクエリで使用する場合の製品数計算"""
+        return (
+            select([func.count(Product.id)])
+            .where(Product.category_id == cls.id)
+            .where(Product.is_active == True)
+            .label('product_count')
+        )
 
     def get_all_children(self):
         """すべての子カテゴリを再帰的に取得"""

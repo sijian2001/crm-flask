@@ -1,5 +1,5 @@
 """
-Common error handling utilities for customer operations
+Common error handling utilities for customer and product operations
 """
 from typing import Optional, Tuple
 from flask import flash
@@ -135,5 +135,60 @@ def validate_customer_operation(customer, operation: str) -> Tuple[bool, Optiona
         }
         op_name = operation_names.get(operation, '操作')
         return False, f'無効化された顧客は{op_name}できません。'
+
+    return True, None
+
+
+def validate_product_operation(product, operation: str) -> Tuple[bool, Optional[str]]:
+    """
+    Common validation for product operations
+
+    Args:
+        product: Product object
+        operation: Operation type (edit, delete, stock_update, etc.)
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not product:
+        return False, '指定された製品が見つかりません。'
+
+    if operation in ['edit', 'delete', 'stock_update'] and not product.is_active:
+        operation_names = {
+            'edit': '編集',
+            'delete': '削除',
+            'stock_update': '在庫更新'
+        }
+        op_name = operation_names.get(operation, '操作')
+        return False, f'無効化された製品は{op_name}できません。'
+
+    return True, None
+
+
+def validate_category_operation(category, operation: str) -> Tuple[bool, Optional[str]]:
+    """
+    Common validation for category operations
+
+    Args:
+        category: Category object
+        operation: Operation type (edit, delete, etc.)
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not category:
+        return False, '指定されたカテゴリが見つかりません。'
+
+    if operation in ['edit', 'delete'] and not category.is_active:
+        operation_names = {
+            'edit': '編集',
+            'delete': '削除'
+        }
+        op_name = operation_names.get(operation, '操作')
+        return False, f'無効化されたカテゴリは{op_name}できません。'
+
+    # カテゴリ削除時の追加チェック
+    if operation == 'delete' and hasattr(category, 'product_count') and category.product_count > 0:
+        return False, 'アクティブな製品が存在するカテゴリは削除できません。'
 
     return True, None
