@@ -3,9 +3,7 @@ from flask import Flask, render_template
 from flask_login import LoginManager, login_required
 from config import Config
 from models import db, User
-from auth import auth
-from customers import customers
-from products import products
+from views import auth, customers, products
 from customer_config import CustomerConfig
 from product_config import ProductConfig
 
