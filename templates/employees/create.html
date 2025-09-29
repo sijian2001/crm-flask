@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- ヘッダー -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('employees.index') }}">従業員管理</a></li>
+                    <li class="breadcrumb-item active">新規従業員登録</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-user-plus"></i> 新規従業員登録</h2>
+                <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> 一覧に戻る
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card"></i> 従業員情報入力
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <!-- 基本情報セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-user"></i> 基本情報
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.employee_code.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.employee_code(class="form-control" + (" is-invalid" if form.employee_code.errors else "")) }}
+                                    {% if form.employee_code.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.employee_code.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">英数字、ハイフン、アンダースコアが使用可能です</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.employment_status.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.employment_status(class="form-select" + (" is-invalid" if form.employment_status.errors else "")) }}
+                                    {% if form.employment_status.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.employment_status.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.last_name.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.last_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.first_name.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.first_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else "")) }}
+                                    {% if form.phone.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.phone.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.hire_date.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.hire_date(class="form-control" + (" is-invalid" if form.hire_date.errors else "")) }}
+                                    {% if form.hire_date.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.hire_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.salary_level.label(class="form-label") }}
+                                    {{ form.salary_level(class="form-control" + (" is-invalid" if form.salary_level.errors else "")) }}
+                                    {% if form.salary_level.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.salary_level.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">1（最低）から10（最高）の範囲で入力</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 組織情報セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-sitemap"></i> 組織情報
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.store_id.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.store_id(class="form-select" + (" is-invalid" if form.store_id.errors else "")) }}
+                                    {% if form.store_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.store_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.position_id.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.position_id(class="form-select" + (" is-invalid" if form.position_id.errors else "")) }}
+                                    {% if form.position_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.position_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">★マークは管理職を表します</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.department_id.label(class="form-label") }}
+                                    {{ form.department_id(class="form-select" + (" is-invalid" if form.department_id.errors else "")) }}
+                                    {% if form.department_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.department_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.manager_id.label(class="form-label") }}
+                                    {{ form.manager_id(class="form-select" + (" is-invalid" if form.manager_id.errors else ""), id="manager_select") }}
+                                    {% if form.manager_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.manager_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">管理職のみ選択可能です</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 緊急連絡先セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-phone"></i> 緊急連絡先
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.emergency_contact_name.label(class="form-label") }}
+                                    {{ form.emergency_contact_name(class="form-control" + (" is-invalid" if form.emergency_contact_name.errors else "")) }}
+                                    {% if form.emergency_contact_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.emergency_contact_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.emergency_contact_phone.label(class="form-label") }}
+                                    {{ form.emergency_contact_phone(class="form-control" + (" is-invalid" if form.emergency_contact_phone.errors else "")) }}
+                                    {% if form.emergency_contact_phone.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.emergency_contact_phone.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 備考セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-sticky-note"></i> 備考
+                                </h6>
+                                <div class="mb-3">
+                                    {{ form.notes.label(class="form-label") }}
+                                    {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else "")) }}
+                                    {% if form.notes.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.notes.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 送信ボタン -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> キャンセル
+                                    </a>
+                                    {{ form.submit(class="btn btn-primary") }}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ヘルプカード -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-question-circle"></i> 入力ガイド
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>必須項目</h6>
+                            <ul class="small">
+                                <li>従業員コード: システム内でユニークな識別子</li>
+                                <li>氏名（姓・名）: 従業員の本名</li>
+                                <li>入社日: 雇用開始日</li>
+                                <li>所属店舗: 勤務する店舗</li>
+                                <li>役職: 職位・階級</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>任意項目</h6>
+                            <ul class="small">
+                                <li>メールアドレス: 社内連絡用</li>
+                                <li>電話番号: 緊急時連絡先</li>
+                                <li>給与レベル: 1-10の範囲で設定</li>
+                                <li>部署: 組織上の所属部署</li>
+                                <li>上司: 直属の上司（管理職のみ）</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb"></i>
+                        <strong>ヒント:</strong> 従業員コードは変更できません。「EMP001」「STORE01_001」など、
+                        運用ルールに沿った形式で設定してください。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.text-danger {
+    font-weight: bold;
+}
+
+.section-header {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    display: block;
+}
+
+.form-text {
+    font-size: 0.875em;
+    color: #6c757d;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // フォームバリデーション
+    const form = document.querySelector('form');
+    const requiredFields = form.querySelectorAll('input[required], select[required]');
+
+    // リアルタイムバリデーション
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            validateField(this);
+        });
+
+        field.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid')) {
+                validateField(this);
+            }
+        });
+    });
+
+    function validateField(field) {
+        const isValid = field.checkValidity();
+        if (isValid && field.value.trim() !== '') {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        } else if (!isValid || field.value.trim() === '') {
+            field.classList.remove('is-valid');
+            field.classList.add('is-invalid');
+        }
+    }
+
+    // 店舗選択時に管理職を更新
+    const storeSelect = document.querySelector('select[name="store_id"]');
+    const managerSelect = document.querySelector('#manager_select');
+
+    if (storeSelect && managerSelect) {
+        storeSelect.addEventListener('change', function() {
+            const storeId = this.value;
+            if (storeId) {
+                updateManagerOptions(storeId);
+            } else {
+                managerSelect.innerHTML = '<option value="">上司を選択してください（任意）</option>';
+            }
+        });
+    }
+
+    function updateManagerOptions(storeId) {
+        fetch(`{{ url_for('employees.api_managers_for_store', store_id=0) }}`.replace('0', storeId))
+            .then(response => response.json())
+            .then(data => {
+                managerSelect.innerHTML = '<option value="">上司を選択してください（任意）</option>';
+                if (data.managers) {
+                    data.managers.forEach(manager => {
+                        const option = document.createElement('option');
+                        option.value = manager.id;
+                        option.textContent = `${manager.full_name} (${manager.position})`;
+                        managerSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('管理職取得エラー:', error);
+            });
+    }
+
+    // 従業員コードの自動生成ヘルプ
+    const employeeCodeField = document.querySelector('input[name="employee_code"]');
+    if (employeeCodeField && !employeeCodeField.value) {
+        storeSelect?.addEventListener('change', function() {
+            if (this.selectedOptions[0] && !employeeCodeField.value) {
+                const storeName = this.selectedOptions[0].textContent;
+                const storeCode = storeName.substring(0, 3).toUpperCase();
+                const timestamp = new Date().getTime().toString().slice(-4);
+                employeeCodeField.value = `${storeCode}${timestamp}`;
+                validateField(employeeCodeField);
+            }
+        });
+    }
+
+    // 入社日のデフォルト値（今日）
+    const hireDateField = document.querySelector('input[name="hire_date"]');
+    if (hireDateField && !hireDateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        hireDateField.value = today;
+    }
+});
+</script>
+{% endblock %}
