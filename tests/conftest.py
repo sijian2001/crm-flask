@@ -5,7 +5,7 @@ import pytest
 import tempfile
 import os
 from app import create_app
-from models import db, User, Customer, Product, Category
+from models import db, User, Customer, Product, Category, Store
 from config import Config
 
 
@@ -101,6 +101,41 @@ def sample_product(db_session, sample_category):
     db_session.add(product)
     db_session.commit()
     return product
+
+
+@pytest.fixture
+def sample_store_data():
+    """Create sample store data for testing"""
+    from datetime import date
+    return {
+        'name': 'Test Store',
+        'address': '123 Test Street, Test City',
+        'phone': '123-456-7890',
+        'email': 'test@store.com',
+        'business_hours': {
+            'mon': '09:00-18:00',
+            'tue': '09:00-18:00',
+            'wed': '09:00-18:00',
+            'thu': '09:00-18:00',
+            'fri': '09:00-18:00',
+            'sat': '10:00-17:00',
+            'sun': 'closed'
+        },
+        'closed_days': '日曜日',
+        'status': 'active',
+        'location_prefecture': '東京都',
+        'location_city': '渋谷区',
+        'establishment_date': date(2020, 1, 1)
+    }
+
+
+@pytest.fixture
+def sample_store(db_session, sample_store_data):
+    """Create sample store for testing"""
+    store = Store(**sample_store_data)
+    db_session.add(store)
+    db_session.commit()
+    return store
 
 
 @pytest.fixture

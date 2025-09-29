@@ -13,5 +13,6 @@ from .user import User
 from .customer import Customer
 from .product import Product
 from .category import Category
+from .store import Store
 
-__all__ = ['db', 'User', 'Customer', 'Product', 'Category']
+__all__ = ['db', 'User', 'Customer', 'Product', 'Category', 'Store']

@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, DecimalField, IntegerField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, DecimalField, IntegerField, SelectField, DateField
 from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, Optional, NumberRange
-from models import User, Customer, Product, Category
+from models import User, Customer, Product, Category, Store
 from customer_config import CustomerConfig
 from product_config import ProductConfig
 
@@ -429,3 +429,216 @@ class CategorySearchForm(FlaskForm):
         categories = Category.query.filter_by(is_active=True, parent_id=None).order_by(Category.name).all()
         for category in categories:
             self.parent_id.choices.append((category.id, category.name))
+
+
+class StoreForm(FlaskForm):
+    """店舗登録・編集フォーム"""
+    name = StringField(
+        '店舗名',
+        validators=[
+            DataRequired(message='店舗名を入力してください'),
+            Length(max=200, message='店舗名は200文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '店舗名'}
+    )
+
+    address = TextAreaField(
+        '住所',
+        validators=[
+            DataRequired(message='住所を入力してください'),
+            Length(max=500, message='住所は500文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '住所を入力してください', 'rows': 3}
+    )
+
+    phone = StringField(
+        '電話番号',
+        validators=[
+            Optional(),
+            Length(max=20, message='電話番号は20文字以下で入力してください'),
+            Regexp(r'^[\d\-\(\)\+\s]*$', message='有効な電話番号を入力してください')
+        ],
+        render_kw={'placeholder': '03-1234-5678'}
+    )
+
+    email = StringField(
+        'メールアドレス',
+        validators=[
+            Optional(),
+            Email(message='有効なメールアドレスを入力してください'),
+            Length(max=120, message='メールアドレスは120文字以下で入力してください')
+        ],
+        render_kw={'placeholder': 'store@example.com'}
+    )
+
+    location_prefecture = StringField(
+        '都道府県',
+        validators=[
+            Optional(),
+            Length(max=50, message='都道府県は50文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '東京都'}
+    )
+
+    location_city = StringField(
+        '市区町村',
+        validators=[
+            Optional(),
+            Length(max=100, message='市区町村は100文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '渋谷区'}
+    )
+
+    status = SelectField(
+        '営業状況',
+        validators=[DataRequired(message='営業状況を選択してください')],
+        choices=[
+            ('active', '営業中'),
+            ('temporarily_closed', '一時休業'),
+            ('inactive', '休業')
+        ],
+        default='active'
+    )
+
+    establishment_date = DateField(
+        '開店日',
+        validators=[Optional()],
+        render_kw={'placeholder': 'YYYY-MM-DD'}
+    )
+
+    # 営業時間フィールド（簡略化）
+    monday_hours = StringField(
+        '月曜日',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': '09:00-18:00 または closed'}
+    )
+
+    tuesday_hours = StringField(
+        '火曜日',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': '09:00-18:00 または closed'}
+    )
+
+    wednesday_hours = StringField(
+        '水曜日',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': '09:00-18:00 または closed'}
+    )
+
+    thursday_hours = StringField(
+        '木曜日',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': '09:00-18:00 または closed'}
+    )
+
+    friday_hours = StringField(
+        '金曜日',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': '09:00-18:00 または closed'}
+    )
+
+    saturday_hours = StringField(
+        '土曜日',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': '10:00-17:00 または closed'}
+    )
+
+    sunday_hours = StringField(
+        '日曜日',
+        validators=[Optional(), Length(max=20)],
+        render_kw={'placeholder': 'closed'}
+    )
+
+    closed_days = StringField(
+        '定休日',
+        validators=[
+            Optional(),
+            Length(max=50, message='定休日は50文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '日曜日、祝日など'}
+    )
+
+    submit = SubmitField('保存')
+
+    def __init__(self, store=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.store = store
+
+        # 既存店舗の場合、営業時間を設定
+        if store and store.business_hours:
+            hours = store.business_hours
+            self.monday_hours.data = hours.get('mon', '')
+            self.tuesday_hours.data = hours.get('tue', '')
+            self.wednesday_hours.data = hours.get('wed', '')
+            self.thursday_hours.data = hours.get('thu', '')
+            self.friday_hours.data = hours.get('fri', '')
+            self.saturday_hours.data = hours.get('sat', '')
+            self.sunday_hours.data = hours.get('sun', '')
+
+    def validate_name(self, name):
+        """店舗名の重複チェック"""
+        store = Store.query.filter_by(name=name.data).first()
+        if store and (not self.store or store.id != self.store.id):
+            raise ValidationError('この店舗名は既に使用されています。')
+
+    def get_business_hours(self):
+        """営業時間辞書を作成"""
+        return {
+            'mon': self.monday_hours.data or 'closed',
+            'tue': self.tuesday_hours.data or 'closed',
+            'wed': self.wednesday_hours.data or 'closed',
+            'thu': self.thursday_hours.data or 'closed',
+            'fri': self.friday_hours.data or 'closed',
+            'sat': self.saturday_hours.data or 'closed',
+            'sun': self.sunday_hours.data or 'closed'
+        }
+
+
+class StoreSearchForm(FlaskForm):
+    """店舗検索フォーム"""
+    search = StringField(
+        '検索',
+        validators=[Optional()],
+        render_kw={'placeholder': '店舗名、住所で検索...'}
+    )
+
+    status = SelectField(
+        '営業状況',
+        validators=[Optional()],
+        choices=[
+            ('', 'すべて'),
+            ('active', '営業中'),
+            ('temporarily_closed', '一時休業'),
+            ('inactive', '休業')
+        ]
+    )
+
+    prefecture = SelectField(
+        '都道府県',
+        validators=[Optional()],
+        choices=[('', 'すべて')]
+    )
+
+    city = SelectField(
+        '市区町村',
+        validators=[Optional()],
+        choices=[('', 'すべて')]
+    )
+
+    submit = SubmitField('検索')
+    clear = SubmitField('クリア')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 都道府県の選択肢を動的に設定
+        prefectures = Store.query.with_entities(Store.location_prefecture).filter(
+            Store.location_prefecture.isnot(None)
+        ).distinct().order_by(Store.location_prefecture).all()
+
+        self.prefecture.choices = [('', 'すべて')]
+        for (pref,) in prefectures:
+            if pref:
+                self.prefecture.choices.append((pref, pref))
+
+        # 市区町村の選択肢は JavaScript で動的に更新
