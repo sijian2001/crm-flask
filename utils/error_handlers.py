@@ -1,5 +1,5 @@
 """
-Common error handling utilities for customer operations
+Common error handling utilities for customer and product operations
 """
 from typing import Optional, Tuple
 from flask import flash
@@ -38,6 +38,70 @@ def handle_customer_operation_success(
 
     # Flash success message
     flash_category = 'success' if operation in ['created', 'updated', 'activated'] else 'info'
+    flash(message, flash_category)
+
+
+def handle_product_operation_success(
+    operation: str,
+    product_name: str,
+    message_template: str = None
+) -> None:
+    """
+    Handle successful product operations with logging and user feedback
+
+    Args:
+        operation: Operation type (created, updated, deactivated, activated, stock_updated)
+        product_name: Name of the product
+        message_template: Custom message template (optional)
+    """
+    # Log the operation
+    logger.info(f'Product {product_name} {operation} by user {current_user.username}')
+
+    # Default messages for different operations
+    default_messages = {
+        'created': f'製品「{product_name}」を登録しました。',
+        'updated': f'製品「{product_name}」の情報を更新しました。',
+        'deactivated': f'製品「{product_name}」を無効化しました。',
+        'activated': f'製品「{product_name}」を有効化しました。',
+        'stock_updated': f'製品「{product_name}」の在庫を更新しました。'
+    }
+
+    # Use custom message or default
+    message = message_template if message_template else default_messages.get(operation, f'製品「{product_name}」の操作が完了しました。')
+
+    # Flash success message
+    flash_category = 'success' if operation in ['created', 'updated', 'activated', 'stock_updated'] else 'info'
+    flash(message, flash_category)
+
+
+def handle_category_operation_success(
+    operation: str,
+    category_name: str,
+    message_template: str = None
+) -> None:
+    """
+    Handle successful category operations with logging and user feedback
+
+    Args:
+        operation: Operation type (created, updated, deactivated)
+        category_name: Name of the category
+        message_template: Custom message template (optional)
+    """
+    # Log the operation
+    logger.info(f'Category {category_name} {operation} by user {current_user.username}')
+
+    # Default messages for different operations
+    default_messages = {
+        'created': f'カテゴリ「{category_name}」を登録しました。',
+        'updated': f'カテゴリ「{category_name}」の情報を更新しました。',
+        'deactivated': f'カテゴリ「{category_name}」を無効化しました。'
+    }
+
+    # Use custom message or default
+    message = message_template if message_template else default_messages.get(operation, f'カテゴリ「{category_name}」の操作が完了しました。')
+
+    # Flash success message
+    flash_category = 'success' if operation in ['created', 'updated'] else 'info'
     flash(message, flash_category)
 
 
@@ -135,5 +199,60 @@ def validate_customer_operation(customer, operation: str) -> Tuple[bool, Optiona
         }
         op_name = operation_names.get(operation, '操作')
         return False, f'無効化された顧客は{op_name}できません。'
+
+    return True, None
+
+
+def validate_product_operation(product, operation: str) -> Tuple[bool, Optional[str]]:
+    """
+    Common validation for product operations
+
+    Args:
+        product: Product object
+        operation: Operation type (edit, delete, stock_update, etc.)
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not product:
+        return False, '指定された製品が見つかりません。'
+
+    if operation in ['edit', 'delete', 'stock_update'] and not product.is_active:
+        operation_names = {
+            'edit': '編集',
+            'delete': '削除',
+            'stock_update': '在庫更新'
+        }
+        op_name = operation_names.get(operation, '操作')
+        return False, f'無効化された製品は{op_name}できません。'
+
+    return True, None
+
+
+def validate_category_operation(category, operation: str) -> Tuple[bool, Optional[str]]:
+    """
+    Common validation for category operations
+
+    Args:
+        category: Category object
+        operation: Operation type (edit, delete, etc.)
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not category:
+        return False, '指定されたカテゴリが見つかりません。'
+
+    if operation in ['edit', 'delete'] and not category.is_active:
+        operation_names = {
+            'edit': '編集',
+            'delete': '削除'
+        }
+        op_name = operation_names.get(operation, '操作')
+        return False, f'無効化されたカテゴリは{op_name}できません。'
+
+    # カテゴリ削除時の追加チェック
+    if operation == 'delete' and hasattr(category, 'product_count') and category.product_count > 0:
+        return False, 'アクティブな製品が存在するカテゴリは削除できません。'
 
     return True, None

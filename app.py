@@ -1,10 +1,14 @@
 import logging
+
 from flask import Flask, render_template
 from flask_login import LoginManager, login_required
+from flask_migrate import Migrate
+
 from config import Config
+from customer_config import CustomerConfig
 from models import db, User
-from auth import auth
-from customers import customers
+from product_config import ProductConfig
+from views import auth, customers, products
 
 def create_app():
     app = Flask(__name__)
@@ -19,6 +23,9 @@ def create_app():
     # データベース初期化
     db.init_app(app)
 
+    # マイグレーション初期化
+    migrate = Migrate(app, db)
+
     # Flask-Login初期化
     login_manager = LoginManager()
     login_manager.init_app(app)
@@ -30,9 +37,14 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
+    # 設定管理の初期化
+    CustomerConfig.init_app(app)
+    ProductConfig.init_app(app)
+
     # Blueprintの登録
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(customers, url_prefix='/customers')
+    app.register_blueprint(products, url_prefix='/products')
 
     # メインルート
     @app.route('/')

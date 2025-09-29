@@ -2,6 +2,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import func, select
 
 db = SQLAlchemy()
 
@@ -101,3 +103,161 @@ class Customer(db.Model):
 
     def __repr__(self):
         return f'<Customer {self.full_name}>'
+
+
+class Category(db.Model):
+    __tablename__ = 'categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, index=True)
+    description = db.Column(db.Text)
+    parent_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # 自己参照関係
+    children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]))
+    # 製品との関係
+    products = db.relationship('Product', backref='category', lazy=True)
+
+    def __init__(self, name, description=None, parent_id=None):
+        self.name = name
+        self.description = description
+        self.parent_id = parent_id
+        self.is_active = True
+        self.created_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
+
+    @property
+    def full_path(self):
+        """カテゴリの完全パスを取得"""
+        if self.parent:
+            return f"{self.parent.full_path} > {self.name}"
+        return self.name
+
+    @hybrid_property
+    def product_count(self):
+        """このカテゴリの製品数を取得"""
+        return Product.query.filter_by(category_id=self.id, is_active=True).count()
+
+    @product_count.expression
+    def product_count(cls):
+        """SQLクエリで使用する場合の製品数計算"""
+        return (
+            select([func.count(Product.id)])
+            .where(Product.category_id == cls.id)
+            .where(Product.is_active == True)
+            .label('product_count')
+        )
+
+    def get_all_children(self):
+        """すべての子カテゴリを再帰的に取得"""
+        children = []
+        for child in self.children:
+            if child.is_active:
+                children.append(child)
+                children.extend(child.get_all_children())
+        return children
+
+    def deactivate(self):
+        """カテゴリを無効化"""
+        self.is_active = False
+        self.updated_at = datetime.utcnow()
+
+    def activate(self):
+        """カテゴリを有効化"""
+        self.is_active = True
+        self.updated_at = datetime.utcnow()
+
+    def __repr__(self):
+        return f'<Category {self.name}>'
+
+
+class Product(db.Model):
+    __tablename__ = 'products'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, index=True)
+    description = db.Column(db.Text)
+    sku = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
+    cost = db.Column(db.Numeric(10, 2))
+    stock_quantity = db.Column(db.Integer, default=0, nullable=False)
+    min_stock_level = db.Column(db.Integer, default=0, nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __init__(self, name, sku, price, category_id, description=None, cost=None,
+                 stock_quantity=0, min_stock_level=0):
+        self.name = name
+        self.description = description
+        self.sku = sku
+        self.price = price
+        self.cost = cost
+        self.stock_quantity = stock_quantity
+        self.min_stock_level = min_stock_level
+        self.category_id = category_id
+        self.is_active = True
+        self.created_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
+
+    @property
+    def is_low_stock(self):
+        """在庫が最小レベルを下回っているかチェック"""
+        return self.stock_quantity <= self.min_stock_level
+
+    @property
+    def profit_margin(self):
+        """利益率を計算"""
+        if self.cost and self.price > 0:
+            return ((self.price - self.cost) / self.price) * 100
+        return None
+
+    @property
+    def profit_amount(self):
+        """利益額を計算"""
+        if self.cost:
+            return self.price - self.cost
+        return None
+
+    def update_stock(self, quantity):
+        """在庫数量を更新"""
+        self.stock_quantity = max(0, quantity)
+        self.updated_at = datetime.utcnow()
+
+    def add_stock(self, quantity):
+        """在庫を追加"""
+        if quantity > 0:
+            self.stock_quantity += quantity
+            self.updated_at = datetime.utcnow()
+
+    def reduce_stock(self, quantity):
+        """在庫を減らす"""
+        if quantity > 0 and self.stock_quantity >= quantity:
+            self.stock_quantity -= quantity
+            self.updated_at = datetime.utcnow()
+            return True
+        return False
+
+    def update_info(self, **kwargs):
+        """製品情報を更新"""
+        for key, value in kwargs.items():
+            if hasattr(self, key) and key not in ['id', 'created_at']:
+                setattr(self, key, value)
+        self.updated_at = datetime.utcnow()
+
+    def deactivate(self):
+        """製品を無効化"""
+        self.is_active = False
+        self.updated_at = datetime.utcnow()
+
+    def activate(self):
+        """製品を有効化"""
+        self.is_active = True
+        self.updated_at = datetime.utcnow()
+
+    def __repr__(self):
+        return f'<Product {self.name} ({self.sku})>'

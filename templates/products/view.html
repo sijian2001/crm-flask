@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - 製品詳細 - CRM システム{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <!-- ヘッダー -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-box"></i> {{ product.name }}
+                {% if not product.is_active %}
+                <span class="badge bg-secondary ms-2">無効</span>
+                {% endif %}
+                {% if product.is_low_stock %}
+                <span class="badge bg-warning text-dark ms-2">
+                    <i class="fas fa-exclamation-triangle"></i> 在庫不足
+                </span>
+                {% endif %}
+            </h1>
+            <div class="btn-group">
+                {% if product.is_active %}
+                <a href="{{ url_for('products.edit', id=product.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> 編集
+                </a>
+                <a href="{{ url_for('products.update_stock', id=product.id) }}" class="btn btn-outline-info">
+                    <i class="fas fa-warehouse"></i> 在庫更新
+                </a>
+                {% endif %}
+                <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-list"></i> 一覧に戻る
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 基本情報 -->
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle"></i> 基本情報
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">製品名</label>
+                                    <div class="fw-bold">{{ product.name }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">SKU</label>
+                                    <div><code class="fs-6">{{ product.sku }}</code></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">カテゴリ</label>
+                                    <div>
+                                        <a href="{{ url_for('products.view_category', id=product.category.id) }}" class="badge bg-primary text-decoration-none">
+                                            {{ product.category.full_path }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">価格</label>
+                                    <div class="fs-4 text-primary fw-bold">¥{{ "{:,.0f}".format(product.price) }}</div>
+                                </div>
+                                {% if product.cost %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">原価</label>
+                                    <div class="fw-bold">¥{{ "{:,.0f}".format(product.cost) }}</div>
+                                </div>
+                                {% if product.profit_amount %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">利益</label>
+                                    <div>
+                                        <span class="fw-bold text-success">¥{{ "{:,.0f}".format(product.profit_amount) }}</span>
+                                        {% if product.profit_margin %}
+                                        <span class="text-muted">({{ "{:.1f}".format(product.profit_margin) }}%)</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endif %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">状態</label>
+                                    <div>
+                                        {% if product.is_active %}
+                                        <span class="badge bg-success">有効</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">無効</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if product.description %}
+                        <div class="mb-3">
+                            <label class="form-label text-muted">説明</label>
+                            <div class="border rounded p-3 bg-light">
+                                {{ product.description|nl2br }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 在庫情報 -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-warehouse"></i> 在庫情報
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <div class="display-4 {% if product.is_low_stock %}text-warning{% else %}text-primary{% endif %}">
+                                {{ product.stock_quantity }}
+                            </div>
+                            <div class="text-muted">現在在庫</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-muted">最小在庫レベル</div>
+                            <div class="fw-bold">{{ product.min_stock_level }}</div>
+                        </div>
+                        {% if product.is_low_stock %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            在庫が最小レベルを下回っています
+                        </div>
+                        {% endif %}
+                        {% if product.is_active %}
+                        <a href="{{ url_for('products.update_stock', id=product.id) }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-edit"></i> 在庫を更新
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- システム情報 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock"></i> システム情報
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <small class="text-muted">作成日時</small>
+                            <div class="small">{{ product.created_at.strftime('%Y/%m/%d %H:%M') }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted">更新日時</small>
+                            <div class="small">{{ product.updated_at.strftime('%Y/%m/%d %H:%M') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作ボタン -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                {% if product.is_active %}
+                                <form method="POST" action="{{ url_for('products.delete', id=product.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger"
+                                            onclick="return confirm('製品「{{ product.name }}」を無効化しますか？')">
+                                        <i class="fas fa-trash-alt"></i> 無効化
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('products.activate', id=product.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-success"
+                                            onclick="return confirm('製品「{{ product.name }}」を有効化しますか？')">
+                                        <i class="fas fa-check"></i> 有効化
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-list"></i> 製品一覧に戻る
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
