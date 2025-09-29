@@ -41,6 +41,70 @@ def handle_customer_operation_success(
     flash(message, flash_category)
 
 
+def handle_product_operation_success(
+    operation: str,
+    product_name: str,
+    message_template: str = None
+) -> None:
+    """
+    Handle successful product operations with logging and user feedback
+
+    Args:
+        operation: Operation type (created, updated, deactivated, activated, stock_updated)
+        product_name: Name of the product
+        message_template: Custom message template (optional)
+    """
+    # Log the operation
+    logger.info(f'Product {product_name} {operation} by user {current_user.username}')
+
+    # Default messages for different operations
+    default_messages = {
+        'created': f'製品「{product_name}」を登録しました。',
+        'updated': f'製品「{product_name}」の情報を更新しました。',
+        'deactivated': f'製品「{product_name}」を無効化しました。',
+        'activated': f'製品「{product_name}」を有効化しました。',
+        'stock_updated': f'製品「{product_name}」の在庫を更新しました。'
+    }
+
+    # Use custom message or default
+    message = message_template if message_template else default_messages.get(operation, f'製品「{product_name}」の操作が完了しました。')
+
+    # Flash success message
+    flash_category = 'success' if operation in ['created', 'updated', 'activated', 'stock_updated'] else 'info'
+    flash(message, flash_category)
+
+
+def handle_category_operation_success(
+    operation: str,
+    category_name: str,
+    message_template: str = None
+) -> None:
+    """
+    Handle successful category operations with logging and user feedback
+
+    Args:
+        operation: Operation type (created, updated, deactivated)
+        category_name: Name of the category
+        message_template: Custom message template (optional)
+    """
+    # Log the operation
+    logger.info(f'Category {category_name} {operation} by user {current_user.username}')
+
+    # Default messages for different operations
+    default_messages = {
+        'created': f'カテゴリ「{category_name}」を登録しました。',
+        'updated': f'カテゴリ「{category_name}」の情報を更新しました。',
+        'deactivated': f'カテゴリ「{category_name}」を無効化しました。'
+    }
+
+    # Use custom message or default
+    message = message_template if message_template else default_messages.get(operation, f'カテゴリ「{category_name}」の操作が完了しました。')
+
+    # Flash success message
+    flash_category = 'success' if operation in ['created', 'updated'] else 'info'
+    flash(message, flash_category)
+
+
 def handle_customer_operation_error(
     operation: str,
     error_message: str,

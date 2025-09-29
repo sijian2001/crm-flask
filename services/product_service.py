@@ -5,9 +5,11 @@ This module provides business logic for product management including CRUD operat
 search, filtering, and inventory management.
 """
 from typing import Optional, Tuple, List
-from sqlalchemy.exc import IntegrityError
+
 from sqlalchemy import or_, and_, desc, asc, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload, subqueryload
+
 from models import db, Product, Category
 from product_config import ProductConfig
 

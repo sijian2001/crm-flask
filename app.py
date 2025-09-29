@@ -1,11 +1,14 @@
 import logging
+
 from flask import Flask, render_template
 from flask_login import LoginManager, login_required
+from flask_migrate import Migrate
+
 from config import Config
-from models import db, User
-from views import auth, customers, products
 from customer_config import CustomerConfig
+from models import db, User
 from product_config import ProductConfig
+from views import auth, customers, products
 
 def create_app():
     app = Flask(__name__)
@@ -19,6 +22,9 @@ def create_app():
 
     # データベース初期化
     db.init_app(app)
+
+    # マイグレーション初期化
+    migrate = Migrate(app, db)
 
     # Flask-Login初期化
     login_manager = LoginManager()

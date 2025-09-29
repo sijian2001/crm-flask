@@ -4,23 +4,27 @@ Product management views
 Flask Blueprint for handling product and category management routes.
 Provides CRUD operations, search, filtering, and stock management functionality.
 """
+import logging
 from typing import Union
+
 from flask import Blueprint, render_template, redirect, url_for, request, abort, current_app, flash
 from flask_login import login_required, current_user
+
 from forms import (
     ProductForm, ProductSearchForm, CategoryForm, CategorySearchForm, StockUpdateForm
 )
-from services import ProductService, CategoryService
 from product_config import ProductConfig
+from services import ProductService, CategoryService
 from utils.error_handlers import (
     handle_customer_operation_success,
     handle_customer_operation_error,
+    handle_product_operation_success,
+    handle_category_operation_success,
     log_customer_access,
     CustomerOperationResult,
     validate_product_operation,
     validate_category_operation
 )
-import logging
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
