@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}店舗管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-store"></i>
+                        店舗管理
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{{ url_for('stores.create') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> 新規店舗
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- 統計情報 -->
+                    {% if stats %}
+                    <div class="row mb-4">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ stats.total_stores }}</h3>
+                                    <p>総店舗数</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>{{ stats.active_stores }}</h3>
+                                    <p>営業中</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>{{ stats.temporarily_closed_stores }}</h3>
+                                    <p>一時休業</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-pause-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-secondary">
+                                <div class="inner">
+                                    <h3>{{ stats.inactive_stores }}</h3>
+                                    <p>休業</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-times-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 検索フォーム -->
+                    <form method="GET" action="{{ url_for('stores.index') }}" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                {{ search_form.search(class_="form-control", placeholder="店舗名、住所で検索...") }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ search_form.status(class_="form-control") }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ search_form.prefecture(class_="form-control") }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ search_form.city(class_="form-control") }}
+                            </div>
+                            <div class="col-md-3">
+                                <div class="btn-group" role="group">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> 検索
+                                    </button>
+                                    <a href="{{ url_for('stores.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> クリア
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- 結果表示 -->
+                    {% if pagination and pagination.items %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <a href="{{ url_for('stores.index', sort_by='name', sort_order='asc' if sort_by != 'name' or sort_order == 'desc' else 'desc') }}">
+                                            店舗名
+                                            {% if sort_by == 'name' %}
+                                                <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>住所</th>
+                                    <th>連絡先</th>
+                                    <th>
+                                        <a href="{{ url_for('stores.index', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc') }}">
+                                            営業状況
+                                            {% if sort_by == 'status' %}
+                                                <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>営業年数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for store in pagination.items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ store.name }}</strong>
+                                        {% if store.location_full %}
+                                            <br><small class="text-muted">{{ store.location_full }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ store.address[:100] }}{% if store.address|length > 100 %}...{% endif %}</td>
+                                    <td>
+                                        {% if store.phone %}
+                                            <i class="fas fa-phone"></i> {{ store.phone }}<br>
+                                        {% endif %}
+                                        {% if store.email %}
+                                            <i class="fas fa-envelope"></i> {{ store.email }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ get_status_badge_class(store.status) }}">
+                                            {{ get_status_text(store.status) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ store.business_years }}年</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('stores.view', store_id=store.id) }}"
+                                               class="btn btn-info btn-sm" title="詳細">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('stores.edit', store_id=store.id) }}"
+                                               class="btn btn-warning btn-sm" title="編集">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-danger btn-sm"
+                                                    onclick="confirmDelete({{ store.id }}, '{{ store.name }}')" title="削除">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- ページネーション -->
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Store pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('stores.index', page=pagination.prev_num) }}">前へ</a>
+                                </li>
+                            {% endif %}
+
+                            {% for page_num in pagination.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != pagination.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('stores.index', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('stores.index', page=pagination.next_num) }}">次へ</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                    <!-- 検索結果情報 -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            {% if pagination %}
+                                {{ pagination.total }}件中 {{ (pagination.page - 1) * pagination.per_page + 1 }} -
+                                {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }}件を表示
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        {% if current_search or current_status or current_prefecture %}
+                            検索条件に一致する店舗が見つかりませんでした。
+                        {% else %}
+                            店舗が登録されていません。新規店舗を作成してください。
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">店舗削除の確認</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>店舗「<span id="deleteStoreName"></span>」を削除してもよろしいですか？</p>
+                <p class="text-danger">この操作は取り消せません。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">キャンセル</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">削除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(storeId, storeName) {
+    $('#deleteStoreName').text(storeName);
+    $('#deleteForm').attr('action', '/stores/delete/' + storeId);
+    $('#deleteModal').modal('show');
+}
+
+// 都道府県変更時に市区町村を更新
+$('#prefecture').change(function() {
+    var prefecture = $(this).val();
+    var citySelect = $('#city');
+
+    if (prefecture) {
+        $.get('/stores/api/cities/' + prefecture, function(data) {
+            citySelect.empty().append('<option value="">すべて</option>');
+            data.cities.forEach(function(city) {
+                citySelect.append('<option value="' + city + '">' + city + '</option>');
+            });
+        });
+    } else {
+        citySelect.empty().append('<option value="">すべて</option>');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}新規店舗登録{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-plus"></i>
+                        新規店舗登録
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{{ url_for('stores.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-list"></i> 一覧に戻る
+                        </a>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('stores.create') }}">
+                    {{ form.hidden_tag() }}
+
+                    <div class="card-body">
+                        <!-- 基本情報 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>基本情報</h5>
+
+                                <div class="form-group">
+                                    {{ form.name.label(class_="form-label") }}
+                                    {{ form.name(class_="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                                    {% if form.name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.address.label(class_="form-label") }}
+                                    {{ form.address(class_="form-control" + (" is-invalid" if form.address.errors else "")) }}
+                                    {% if form.address.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.address.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.phone.label(class_="form-label") }}
+                                    {{ form.phone(class_="form-control" + (" is-invalid" if form.phone.errors else "")) }}
+                                    {% if form.phone.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.phone.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.email.label(class_="form-label") }}
+                                    {{ form.email(class_="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h5>所在地・状況</h5>
+
+                                <div class="form-group">
+                                    {{ form.location_prefecture.label(class_="form-label") }}
+                                    {{ form.location_prefecture(class_="form-control" + (" is-invalid" if form.location_prefecture.errors else "")) }}
+                                    {% if form.location_prefecture.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.location_prefecture.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.location_city.label(class_="form-label") }}
+                                    {{ form.location_city(class_="form-control" + (" is-invalid" if form.location_city.errors else "")) }}
+                                    {% if form.location_city.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.location_city.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.status.label(class_="form-label") }}
+                                    {{ form.status(class_="form-control" + (" is-invalid" if form.status.errors else "")) }}
+                                    {% if form.status.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.status.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.establishment_date.label(class_="form-label") }}
+                                    {{ form.establishment_date(class_="form-control" + (" is-invalid" if form.establishment_date.errors else "")) }}
+                                    {% if form.establishment_date.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.establishment_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- 営業時間 -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>営業時間</h5>
+                                <p class="text-muted">各曜日の営業時間を入力してください。休業の場合は「closed」と入力してください。</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.monday_hours.label(class_="form-label") }}
+                                    {{ form.monday_hours(class_="form-control") }}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.tuesday_hours.label(class_="form-label") }}
+                                    {{ form.tuesday_hours(class_="form-control") }}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.wednesday_hours.label(class_="form-label") }}
+                                    {{ form.wednesday_hours(class_="form-control") }}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.thursday_hours.label(class_="form-label") }}
+                                    {{ form.thursday_hours(class_="form-control") }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.friday_hours.label(class_="form-label") }}
+                                    {{ form.friday_hours(class_="form-control") }}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.saturday_hours.label(class_="form-label") }}
+                                    {{ form.saturday_hours(class_="form-control") }}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.sunday_hours.label(class_="form-label") }}
+                                    {{ form.sunday_hours(class_="form-control") }}
+                                </div>
+
+                                <div class="form-group">
+                                    {{ form.closed_days.label(class_="form-label") }}
+                                    {{ form.closed_days(class_="form-control" + (" is-invalid" if form.closed_days.errors else "")) }}
+                                    {% if form.closed_days.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.closed_days.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> 保存
+                                </button>
+                                <a href="{{ url_for('stores.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> キャンセル
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 時間入力のヘルパー
+$(document).ready(function() {
+    // デフォルト営業時間の設定ボタン
+    $('.card-body').prepend(`
+        <div class="alert alert-info">
+            <button type="button" class="btn btn-sm btn-outline-primary float-right" onclick="setDefaultHours()">
+                デフォルト営業時間を設定
+            </button>
+            <i class="fas fa-info-circle"></i>
+            営業時間の形式例：09:00-18:00、10:00-17:00、closed（休業）
+        </div>
+    `);
+});
+
+function setDefaultHours() {
+    $('#monday_hours').val('09:00-18:00');
+    $('#tuesday_hours').val('09:00-18:00');
+    $('#wednesday_hours').val('09:00-18:00');
+    $('#thursday_hours').val('09:00-18:00');
+    $('#friday_hours').val('09:00-18:00');
+    $('#saturday_hours').val('10:00-17:00');
+    $('#sunday_hours').val('closed');
+}
+</script>
+{% endblock %}

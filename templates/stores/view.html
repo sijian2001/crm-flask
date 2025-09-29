@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}{{ store.name }} - 店舗詳細{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-store"></i>
+                        {{ store.name }}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{{ url_for('stores.edit', store_id=store.id) }}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> 編集
+                        </a>
+                        <a href="{{ url_for('stores.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-list"></i> 一覧に戻る
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <!-- 基本情報 -->
+                        <div class="col-md-6">
+                            <h5>基本情報</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th style="width: 30%;">店舗名</th>
+                                    <td>{{ store.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>住所</th>
+                                    <td>{{ store.address }}</td>
+                                </tr>
+                                <tr>
+                                    <th>電話番号</th>
+                                    <td>
+                                        {% if store.phone %}
+                                            <a href="tel:{{ store.phone }}">{{ store.phone }}</a>
+                                        {% else %}
+                                            <span class="text-muted">未登録</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>メールアドレス</th>
+                                    <td>
+                                        {% if store.email %}
+                                            <a href="mailto:{{ store.email }}">{{ store.email }}</a>
+                                        {% else %}
+                                            <span class="text-muted">未登録</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>営業状況</th>
+                                    <td>
+                                        <span class="badge {{ get_status_badge_class(store.status) }}">
+                                            {{ get_status_text(store.status) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>所在地</th>
+                                    <td>
+                                        {% if store.location_full %}
+                                            {{ store.location_full }}
+                                        {% else %}
+                                            <span class="text-muted">未登録</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>開店日</th>
+                                    <td>
+                                        {% if store.establishment_date %}
+                                            {{ store.establishment_date.strftime('%Y年%m月%d日') }}
+                                        {% else %}
+                                            <span class="text-muted">未登録</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>営業年数</th>
+                                    <td>{{ store.business_years }}年</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- 営業時間情報 -->
+                        <div class="col-md-6">
+                            <h5>営業時間</h5>
+                            {% if store.business_hours %}
+                                {% set formatted_hours = format_business_hours(store.business_hours) %}
+                                <table class="table table-sm table-bordered">
+                                    {% for day, hours in formatted_hours.items() %}
+                                    <tr>
+                                        <th style="width: 30%;">{{ day }}曜日</th>
+                                        <td>
+                                            {% if hours == '休業' %}
+                                                <span class="text-muted">{{ hours }}</span>
+                                            {% else %}
+                                                {{ hours }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            {% else %}
+                                <p class="text-muted">営業時間が設定されていません。</p>
+                            {% endif %}
+
+                            {% if store.closed_days %}
+                            <h6 class="mt-3">定休日</h6>
+                            <p>{{ store.closed_days }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 操作ボタン -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>操作</h5>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('stores.edit', store_id=store.id) }}" class="btn btn-warning">
+                                    <i class="fas fa-edit"></i> 編集
+                                </a>
+                                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                                    <i class="fas fa-trash"></i> 削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- メタ情報 -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>システム情報</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th style="width: 15%;">作成日時</th>
+                                    <td>{{ store.created_at.strftime('%Y年%m月%d日 %H:%M') if store.created_at else '不明' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>更新日時</th>
+                                    <td>{{ store.updated_at.strftime('%Y年%m月%d日 %H:%M') if store.updated_at else '不明' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">店舗削除の確認</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>店舗「{{ store.name }}」を削除してもよろしいですか？</p>
+                <p class="text-danger">この操作は取り消せません。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">キャンセル</button>
+                <form method="POST" action="{{ url_for('stores.delete', store_id=store.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">削除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete() {
+    $('#deleteModal').modal('show');
+}
+</script>
+{% endblock %}
