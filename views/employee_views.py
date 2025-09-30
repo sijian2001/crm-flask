@@ -221,7 +221,7 @@ def delete(employee_id):
     return redirect(url_for('employees.index'))
 
 
-@employees.route('/transfer/<int:employee_id>', methods=['POST'])
+@employees.route('/<int:employee_id>/transfers', methods=['POST'])
 @login_required
 def transfer(employee_id):
     """従業員異動処理"""
@@ -244,13 +244,17 @@ def transfer(employee_id):
         else:
             flash(message, 'error')
 
+    except ValueError as e:
+        flash(f'入力値エラー: {str(e)}', 'warning')
     except Exception as e:
-        flash(f'従業員異動処理中にエラーが発生しました: {str(e)}', 'error')
+        from flask import current_app
+        current_app.logger.error(f'Transfer failed for employee {employee_id}: {str(e)}')
+        flash('異動処理中にエラーが発生しました', 'error')
 
     return redirect(url_for('employees.view', employee_id=employee_id))
 
 
-@employees.route('/promote/<int:employee_id>', methods=['POST'])
+@employees.route('/<int:employee_id>/promotions', methods=['POST'])
 @login_required
 def promote(employee_id):
     """従業員昇進処理"""
@@ -268,8 +272,12 @@ def promote(employee_id):
         else:
             flash(message, 'error')
 
+    except ValueError as e:
+        flash(f'入力値エラー: {str(e)}', 'warning')
     except Exception as e:
-        flash(f'従業員昇進処理中にエラーが発生しました: {str(e)}', 'error')
+        from flask import current_app
+        current_app.logger.error(f'Promotion failed for employee {employee_id}: {str(e)}')
+        flash('昇進処理中にエラーが発生しました', 'error')
 
     return redirect(url_for('employees.view', employee_id=employee_id))
 

@@ -4,6 +4,7 @@ Department model module
 This module contains the Department model for managing organizational
 departments and hierarchical structure.
 """
+from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -129,21 +130,24 @@ class Department(db.Model):
         """
         return len([child for child in self.children if child.is_active])
 
-    def get_all_children(self):
+    def get_all_children(self, include_inactive: bool = False) -> List['Department']:
         """
         Get all descendant departments recursively
+
+        Args:
+            include_inactive: Whether to include inactive departments
 
         Returns:
             List of all descendant departments
         """
         children = []
         for child in self.children:
-            if child.is_active:
+            if include_inactive or child.is_active:
                 children.append(child)
-                children.extend(child.get_all_children())
+                children.extend(child.get_all_children(include_inactive))
         return children
 
-    def get_root_department(self):
+    def get_root_department(self) -> 'Department':
         """
         Get the root department of this hierarchy
 
@@ -154,7 +158,7 @@ class Department(db.Model):
             return self
         return self.parent.get_root_department()
 
-    def is_descendant_of(self, other_department):
+    def is_descendant_of(self, other_department: 'Department') -> bool:
         """
         Check if this department is a descendant of another
 
@@ -170,7 +174,7 @@ class Department(db.Model):
             return True
         return self.parent.is_descendant_of(other_department)
 
-    def can_be_moved_to(self, new_parent):
+    def can_be_moved_to(self, new_parent: Optional['Department']) -> bool:
         """
         Check if department can be moved to new parent without creating cycles
 

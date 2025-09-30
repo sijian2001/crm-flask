@@ -9,8 +9,8 @@ from datetime import date, datetime
 from collections import defaultdict
 
 from sqlalchemy import or_, and_, desc, asc, func
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError, DataError
+from sqlalchemy.orm import selectinload, joinedload
 
 from models import db, Employee, Position, Department, Store
 
@@ -54,12 +54,12 @@ class EmployeeService:
         if per_page is None:
             per_page = 20
 
-        # Build base query with eager loading
+        # Build base query with eager loading to prevent N+1 problems
         query = Employee.query.options(
-            selectinload(Employee.store),
-            selectinload(Employee.position),
-            selectinload(Employee.department),
-            selectinload(Employee.manager)
+            joinedload(Employee.store),
+            joinedload(Employee.position),
+            joinedload(Employee.department),
+            joinedload(Employee.manager)
         )
 
         # Apply search filter
@@ -300,10 +300,10 @@ class EmployeeService:
             Employee object or None
         """
         return Employee.query.options(
-            selectinload(Employee.store),
-            selectinload(Employee.position),
-            selectinload(Employee.department),
-            selectinload(Employee.manager),
+            joinedload(Employee.store),
+            joinedload(Employee.position),
+            joinedload(Employee.department),
+            joinedload(Employee.manager),
             selectinload(Employee.subordinates)
         ).get(employee_id)
 
@@ -351,7 +351,12 @@ class EmployeeService:
         Returns:
             List of employees
         """
-        query = Employee.get_by_store(store_id)
+        query = Employee.get_by_store(store_id).options(
+            joinedload(Employee.store),
+            joinedload(Employee.position),
+            joinedload(Employee.department),
+            joinedload(Employee.manager)
+        )
         if active_only:
             query = query.filter(Employee.employment_status == 'active')
         return query.order_by(Employee.last_name, Employee.first_name).all()
@@ -367,7 +372,12 @@ class EmployeeService:
         Returns:
             List of subordinate employees
         """
-        return Employee.query.filter(
+        return Employee.query.options(
+            joinedload(Employee.store),
+            joinedload(Employee.position),
+            joinedload(Employee.department),
+            joinedload(Employee.manager)
+        ).filter(
             Employee.manager_id == manager_id,
             Employee.employment_status == 'active'
         ).order_by(Employee.last_name, Employee.first_name).all()

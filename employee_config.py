@@ -196,27 +196,31 @@ class EmployeeConfig(BaseConfig):
 
     def get_per_page(self) -> int:
         """
-        Get default items per page
+        Get default items per page with validation
 
         Returns:
-            Number of items per page
+            Number of items per page (validated to be between 1 and max_per_page)
         """
-        return int(os.environ.get(
+        value = int(os.environ.get(
             f'{self._config_prefix}_PAGINATION_PER_PAGE',
             self.get('pagination.per_page', 20)
         ))
+        # Validate range: must be at least 1 and at most max_per_page
+        return max(1, min(value, self.get_max_per_page()))
 
     def get_max_per_page(self) -> int:
         """
-        Get maximum items per page
+        Get maximum items per page with validation
 
         Returns:
-            Maximum number of items per page
+            Maximum number of items per page (at least 1)
         """
-        return int(os.environ.get(
+        value = int(os.environ.get(
             f'{self._config_prefix}_PAGINATION_MAX_PER_PAGE',
             self.get('pagination.max_per_page', 100)
         ))
+        # Ensure at least 1
+        return max(1, value)
 
     def get_search_config(self) -> Dict[str, Any]:
         """

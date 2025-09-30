@@ -4,6 +4,7 @@ Employee model module
 This module contains the Employee model for managing employee information,
 organizational relationships, and employment details.
 """
+from typing import List, Optional
 from datetime import datetime, date
 from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -206,21 +207,24 @@ class Employee(db.Model):
 
         return self.position.salary_range_display
 
-    def get_all_subordinates(self):
+    def get_all_subordinates(self, include_inactive: bool = False) -> List['Employee']:
         """
         Get all subordinates recursively
+
+        Args:
+            include_inactive: Whether to include inactive employees
 
         Returns:
             List of all subordinate employees
         """
         all_subordinates = []
         for subordinate in self.subordinates:
-            if subordinate.is_active:
+            if include_inactive or subordinate.is_active:
                 all_subordinates.append(subordinate)
-                all_subordinates.extend(subordinate.get_all_subordinates())
+                all_subordinates.extend(subordinate.get_all_subordinates(include_inactive))
         return all_subordinates
 
-    def can_be_manager_of(self, employee):
+    def can_be_manager_of(self, employee: 'Employee') -> bool:
         """
         Check if this employee can be manager of another employee
 
