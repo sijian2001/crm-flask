@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- ヘッダー -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('employees.index') }}">従業員管理</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('employees.view', employee_id=employee.id) }}">{{ employee.full_name }}</a></li>
+                    <li class="breadcrumb-item active">編集</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-user-edit"></i> {{ employee.full_name }} の編集
+                    <span class="badge {{ get_status_badge_class(employee.employment_status) }} ms-2">
+                        {{ format_employment_status(employee.employment_status) }}
+                    </span>
+                </h2>
+                <div>
+                    <a href="{{ url_for('employees.view', employee_id=employee.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-eye"></i> 詳細表示
+                    </a>
+                    <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> 一覧に戻る
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card"></i> 従業員情報編集
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <!-- 変更履歴表示 -->
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>登録日:</strong> {{ employee.created_at.strftime('%Y年%m月%d日 %H:%M') if employee.created_at }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>最終更新:</strong> {{ employee.updated_at.strftime('%Y年%m月%d日 %H:%M') if employee.updated_at }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 基本情報セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-user"></i> 基本情報
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.employee_code.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.employee_code(class="form-control" + (" is-invalid" if form.employee_code.errors else "")) }}
+                                    {% if form.employee_code.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.employee_code.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                        従業員コードの変更は慎重に行ってください
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.employment_status.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.employment_status(class="form-select" + (" is-invalid" if form.employment_status.errors else "")) }}
+                                    {% if form.employment_status.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.employment_status.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if employee.employment_status != 'active' %}
+                                        <div class="form-text text-warning">
+                                            <i class="fas fa-info-circle"></i>
+                                            現在の状況: {{ format_employment_status(employee.employment_status) }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.last_name.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.last_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.first_name.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.first_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else "")) }}
+                                    {% if form.phone.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.phone.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.hire_date.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.hire_date(class="form-control" + (" is-invalid" if form.hire_date.errors else "")) }}
+                                    {% if form.hire_date.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.hire_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        勤続年数: <strong>{{ format_tenure_years(employee.tenure_years) }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.salary_level.label(class="form-label") }}
+                                    {{ form.salary_level(class="form-control" + (" is-invalid" if form.salary_level.errors else "")) }}
+                                    {% if form.salary_level.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.salary_level.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        現在の給与範囲: {{ format_salary_range(employee) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 組織情報セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-sitemap"></i> 組織情報
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.store_id.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.store_id(class="form-select" + (" is-invalid" if form.store_id.errors else "")) }}
+                                    {% if form.store_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.store_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        現在: {{ employee.store.name if employee.store else '未設定' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.position_id.label(class="form-label") }}
+                                    <span class="text-danger">*</span>
+                                    {{ form.position_id(class="form-select" + (" is-invalid" if form.position_id.errors else "")) }}
+                                    {% if form.position_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.position_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        現在: {{ employee.position.name if employee.position else '未設定' }}
+                                        {% if employee.position and employee.position.is_management %}
+                                            <i class="fas fa-crown text-warning ms-1"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.department_id.label(class="form-label") }}
+                                    {{ form.department_id(class="form-select" + (" is-invalid" if form.department_id.errors else "")) }}
+                                    {% if form.department_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.department_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        現在: {{ employee.department.full_name if employee.department else '未設定' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.manager_id.label(class="form-label") }}
+                                    {{ form.manager_id(class="form-select" + (" is-invalid" if form.manager_id.errors else ""), id="manager_select") }}
+                                    {% if form.manager_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.manager_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        現在: {{ employee.manager.full_name if employee.manager else '未設定' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 部下がいる場合の警告 -->
+                        {% if employee.subordinate_count > 0 %}
+                        <div class="alert alert-warning">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="alert-heading">部下の管理について</h6>
+                                    <p class="mb-0">この従業員には <strong>{{ employee.subordinate_count }}名</strong> の部下がいます。
+                                    役職や上司を変更する場合は、部下の上司設定も併せて確認してください。</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- 緊急連絡先セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-phone"></i> 緊急連絡先
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.emergency_contact_name.label(class="form-label") }}
+                                    {{ form.emergency_contact_name(class="form-control" + (" is-invalid" if form.emergency_contact_name.errors else "")) }}
+                                    {% if form.emergency_contact_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.emergency_contact_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.emergency_contact_phone.label(class="form-label") }}
+                                    {{ form.emergency_contact_phone(class="form-control" + (" is-invalid" if form.emergency_contact_phone.errors else "")) }}
+                                    {% if form.emergency_contact_phone.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.emergency_contact_phone.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 備考セクション -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-sticky-note"></i> 備考
+                                </h6>
+                                <div class="mb-3">
+                                    {{ form.notes.label(class="form-label") }}
+                                    {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else "")) }}
+                                    {% if form.notes.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.notes.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 送信ボタン -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a href="{{ url_for('employees.view', employee_id=employee.id) }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> キャンセル
+                                    </a>
+                                    <button type="button" class="btn btn-outline-primary" onclick="resetForm()">
+                                        <i class="fas fa-undo"></i> リセット
+                                    </button>
+                                    {{ form.submit(class="btn btn-primary") }}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 変更履歴 -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-history"></i> 編集のガイド
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>変更時の注意点</h6>
+                            <ul class="small">
+                                <li><strong>従業員コード:</strong> 他のシステムとの連携に影響する可能性があります</li>
+                                <li><strong>雇用状況:</strong> 給与計算や権限管理に影響します</li>
+                                <li><strong>店舗・役職:</strong> アクセス権限が変更される場合があります</li>
+                                <li><strong>上司:</strong> 承認フローや報告ラインが変更されます</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>よくある変更パターン</h6>
+                            <ul class="small">
+                                <li><strong>昇進:</strong> 役職を上位に変更、給与レベル調整</li>
+                                <li><strong>異動:</strong> 店舗・部署・上司を同時に変更</li>
+                                <li><strong>休職:</strong> 雇用状況を「休職」に変更</li>
+                                <li><strong>復職:</strong> 雇用状況を「在職」に戻す</li>
+                            </ul>
+                        </div>
+                    </div>
+                    {% if employee.subordinate_count > 0 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-users"></i>
+                        <strong>部下の管理:</strong> この従業員の部下は
+                        <a href="{{ url_for('employees.index', manager_id=employee.id) }}" target="_blank">こちら</a>
+                        で確認できます。
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.text-danger {
+    font-weight: bold;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    display: block;
+}
+
+.form-text {
+    font-size: 0.875em;
+    color: #6c757d;
+}
+
+.alert-warning .alert-heading {
+    color: inherit;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 元の値を保存
+    const originalValues = {};
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            originalValues[input.name] = input.checked;
+        } else {
+            originalValues[input.name] = input.value;
+        }
+    });
+
+    // リセット機能
+    window.resetForm = function() {
+        if (confirm('入力内容をリセットしますか？')) {
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.checked = originalValues[input.name];
+                } else {
+                    input.value = originalValues[input.name];
+                }
+                input.classList.remove('is-invalid', 'is-valid');
+            });
+        }
+    };
+
+    // フォームバリデーション
+    const requiredFields = form.querySelectorAll('input[required], select[required]');
+
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            validateField(this);
+        });
+
+        field.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid')) {
+                validateField(this);
+            }
+        });
+    });
+
+    function validateField(field) {
+        const isValid = field.checkValidity();
+        if (isValid && field.value.trim() !== '') {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        } else if (!isValid || field.value.trim() === '') {
+            field.classList.remove('is-valid');
+            field.classList.add('is-invalid');
+        }
+    }
+
+    // 変更検知
+    let hasChanges = false;
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            hasChanges = true;
+        });
+    });
+
+    // ページ離脱時の警告
+    window.addEventListener('beforeunload', function(e) {
+        if (hasChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // フォーム送信時は警告を無効化
+    form.addEventListener('submit', function() {
+        hasChanges = false;
+    });
+
+    // 店舗選択時に管理職を更新
+    const storeSelect = document.querySelector('select[name="store_id"]');
+    const managerSelect = document.querySelector('#manager_select');
+
+    if (storeSelect && managerSelect) {
+        storeSelect.addEventListener('change', function() {
+            const storeId = this.value;
+            if (storeId) {
+                updateManagerOptions(storeId);
+            }
+        });
+    }
+
+    function updateManagerOptions(storeId) {
+        fetch(`{{ url_for('employees.api_managers_for_store', store_id=0) }}`.replace('0', storeId))
+            .then(response => response.json())
+            .then(data => {
+                const currentManagerId = '{{ employee.manager_id if employee.manager_id else "" }}';
+                managerSelect.innerHTML = '<option value="">上司を選択してください（任意）</option>';
+
+                if (data.managers) {
+                    data.managers.forEach(manager => {
+                        // 自分自身は選択肢に含めない
+                        if (manager.id !== {{ employee.id }}) {
+                            const option = document.createElement('option');
+                            option.value = manager.id;
+                            option.textContent = `${manager.full_name} (${manager.position})`;
+                            if (manager.id.toString() === currentManagerId) {
+                                option.selected = true;
+                            }
+                            managerSelect.appendChild(option);
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('管理職取得エラー:', error);
+            });
+    }
+
+    // 勤続年数の動的更新
+    const hireDateField = document.querySelector('input[name="hire_date"]');
+    if (hireDateField) {
+        hireDateField.addEventListener('change', function() {
+            updateTenureDisplay(this.value);
+        });
+    }
+
+    function updateTenureDisplay(hireDate) {
+        if (hireDate) {
+            const today = new Date();
+            const hire = new Date(hireDate);
+            const diffTime = Math.abs(today - hire);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const years = (diffDays / 365.25).toFixed(1);
+
+            const tenureDisplay = hireDateField.parentElement.querySelector('.form-text');
+            if (tenureDisplay) {
+                tenureDisplay.innerHTML = `勤続年数: <strong>${years}年</strong>`;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

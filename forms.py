@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, DecimalField, IntegerField, SelectField, DateField
 from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, Optional, NumberRange
-from models import User, Customer, Product, Category, Store
+from models import User, Customer, Product, Category, Store, Employee, Position, Department
 from customer_config import CustomerConfig
 from product_config import ProductConfig
 
@@ -642,3 +642,410 @@ class StoreSearchForm(FlaskForm):
                 self.prefecture.choices.append((pref, pref))
 
         # 市区町村の選択肢は JavaScript で動的に更新
+
+
+class EmployeeForm(FlaskForm):
+    """従業員登録・編集フォーム"""
+    employee_code = StringField(
+        '従業員コード',
+        validators=[
+            DataRequired(message='従業員コードを入力してください'),
+            Length(max=20, message='従業員コードは20文字以下で入力してください'),
+            Regexp(r'^[A-Za-z0-9\-_]+$', message='従業員コードは英数字とハイフン、アンダースコアのみ使用可能です')
+        ],
+        render_kw={'placeholder': 'EMP001'}
+    )
+
+    first_name = StringField(
+        '名',
+        validators=[
+            DataRequired(message='名を入力してください'),
+            Length(max=50, message='名は50文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '太郎'}
+    )
+
+    last_name = StringField(
+        '姓',
+        validators=[
+            DataRequired(message='姓を入力してください'),
+            Length(max=50, message='姓は50文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '田中'}
+    )
+
+    email = StringField(
+        'メールアドレス',
+        validators=[
+            Optional(),
+            Email(message='有効なメールアドレスを入力してください'),
+            Length(max=120, message='メールアドレスは120文字以下で入力してください')
+        ],
+        render_kw={'placeholder': 'employee@example.com'}
+    )
+
+    phone = StringField(
+        '電話番号',
+        validators=[
+            Optional(),
+            Length(max=20, message='電話番号は20文字以下で入力してください'),
+            Regexp(r'^[\d\-\(\)\+\s]*$', message='有効な電話番号を入力してください')
+        ],
+        render_kw={'placeholder': '090-1234-5678'}
+    )
+
+    hire_date = DateField(
+        '入社日',
+        validators=[DataRequired(message='入社日を選択してください')],
+        render_kw={'placeholder': 'YYYY-MM-DD'}
+    )
+
+    employment_status = SelectField(
+        '雇用状況',
+        validators=[DataRequired(message='雇用状況を選択してください')],
+        choices=[
+            ('active', '在職'),
+            ('on_leave', '休職'),
+            ('inactive', '退職'),
+            ('terminated', '解雇')
+        ],
+        default='active'
+    )
+
+    salary_level = IntegerField(
+        '給与レベル',
+        validators=[
+            Optional(),
+            NumberRange(min=1, max=10, message='給与レベルは1-10の範囲で入力してください')
+        ],
+        render_kw={'placeholder': '1-10', 'min': '1', 'max': '10'}
+    )
+
+    store_id = SelectField(
+        '所属店舗',
+        validators=[DataRequired(message='所属店舗を選択してください')],
+        coerce=int
+    )
+
+    position_id = SelectField(
+        '役職',
+        validators=[DataRequired(message='役職を選択してください')],
+        coerce=int
+    )
+
+    department_id = SelectField(
+        '部署',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    manager_id = SelectField(
+        '上司',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    emergency_contact_name = StringField(
+        '緊急連絡先（氏名）',
+        validators=[
+            Optional(),
+            Length(max=100, message='緊急連絡先氏名は100文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '緊急連絡先の氏名'}
+    )
+
+    emergency_contact_phone = StringField(
+        '緊急連絡先（電話番号）',
+        validators=[
+            Optional(),
+            Length(max=20, message='緊急連絡先電話番号は20文字以下で入力してください'),
+            Regexp(r'^[\d\-\(\)\+\s]*$', message='有効な電話番号を入力してください')
+        ],
+        render_kw={'placeholder': '090-1234-5678'}
+    )
+
+    notes = TextAreaField(
+        '備考',
+        validators=[Optional()],
+        render_kw={'placeholder': '特記事項があれば入力してください', 'rows': 3}
+    )
+
+    submit = SubmitField('保存')
+
+    def __init__(self, employee=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.employee = employee
+
+        # 店舗の選択肢を設定
+        self.store_id.choices = [(0, '店舗を選択してください')]
+        stores = Store.query.filter_by(status='active').order_by(Store.name).all()
+        for store in stores:
+            self.store_id.choices.append((store.id, store.name))
+
+        # 役職の選択肢を設定
+        self.position_id.choices = [(0, '役職を選択してください')]
+        positions = Position.query.filter_by(is_active=True).order_by(Position.level, Position.name).all()
+        for position in positions:
+            level_indicator = "★" * min(position.level, 5) if position.is_management else ""
+            display_name = f"{position.name} {level_indicator}".strip()
+            self.position_id.choices.append((position.id, display_name))
+
+        # 部署の選択肢を設定
+        self.department_id.choices = [('', '部署を選択してください（任意）')]
+        departments = Department.query.filter_by(is_active=True).order_by(Department.name).all()
+        for department in departments:
+            self.department_id.choices.append((department.id, department.full_name))
+
+        # 上司の選択肢を設定（管理職のみ）
+        self.manager_id.choices = [('', '上司を選択してください（任意）')]
+        managers = Employee.query.join(Position).filter(
+            Employee.employment_status == 'active',
+            Position.is_management == True
+        ).order_by(Employee.last_name, Employee.first_name).all()
+
+        for manager in managers:
+            # 自分自身は選択肢に含めない
+            if not employee or manager.id != employee.id:
+                self.manager_id.choices.append((manager.id, f"{manager.full_name} ({manager.position.name})"))
+
+    def validate_employee_code(self, employee_code):
+        """従業員コードの重複チェック"""
+        employee = Employee.query.filter_by(employee_code=employee_code.data).first()
+        if employee and (not self.employee or employee.id != self.employee.id):
+            raise ValidationError('この従業員コードは既に使用されています。')
+
+    def validate_email(self, email):
+        """メールアドレスの重複チェック"""
+        if email.data:
+            employee = Employee.query.filter_by(email=email.data).first()
+            if employee and (not self.employee or employee.id != self.employee.id):
+                raise ValidationError('このメールアドレスは既に使用されています。')
+
+    def validate_manager_id(self, manager_id):
+        """上司設定の循環参照チェック"""
+        if manager_id.data and self.employee:
+            manager = Employee.query.get(manager_id.data)
+            if manager and not self.employee.can_be_manager_of(manager):
+                raise ValidationError('循環参照となる上司の設定はできません。')
+
+
+class EmployeeSearchForm(FlaskForm):
+    """従業員検索フォーム"""
+    search = StringField(
+        '検索',
+        validators=[Optional()],
+        render_kw={'placeholder': '従業員名、従業員コード、メールアドレスで検索...'}
+    )
+
+    store_id = SelectField(
+        '店舗',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    position_id = SelectField(
+        '役職',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    department_id = SelectField(
+        '部署',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    employment_status = SelectField(
+        '雇用状況',
+        validators=[Optional()],
+        choices=[
+            ('', 'すべて'),
+            ('active', '在職'),
+            ('on_leave', '休職'),
+            ('inactive', '退職'),
+            ('terminated', '解雇')
+        ]
+    )
+
+    manager_id = SelectField(
+        '上司',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    submit = SubmitField('検索')
+    clear = SubmitField('クリア')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 店舗の選択肢を設定
+        self.store_id.choices = [('', 'すべて')]
+        stores = Store.query.filter_by(status='active').order_by(Store.name).all()
+        for store in stores:
+            self.store_id.choices.append((store.id, store.name))
+
+        # 役職の選択肢を設定
+        self.position_id.choices = [('', 'すべて')]
+        positions = Position.query.filter_by(is_active=True).order_by(Position.level, Position.name).all()
+        for position in positions:
+            level_indicator = "★" * min(position.level, 5) if position.is_management else ""
+            display_name = f"{position.name} {level_indicator}".strip()
+            self.position_id.choices.append((position.id, display_name))
+
+        # 部署の選択肢を設定
+        self.department_id.choices = [('', 'すべて')]
+        departments = Department.query.filter_by(is_active=True).order_by(Department.name).all()
+        for department in departments:
+            self.department_id.choices.append((department.id, department.full_name))
+
+        # 上司の選択肢を設定
+        self.manager_id.choices = [('', 'すべて')]
+        managers = Employee.query.join(Position).filter(
+            Employee.employment_status == 'active',
+            Position.is_management == True
+        ).order_by(Employee.last_name, Employee.first_name).all()
+
+        for manager in managers:
+            self.manager_id.choices.append((manager.id, f"{manager.full_name} ({manager.position.name})"))
+
+
+class PositionForm(FlaskForm):
+    """役職登録・編集フォーム"""
+    name = StringField(
+        '役職名',
+        validators=[
+            DataRequired(message='役職名を入力してください'),
+            Length(max=100, message='役職名は100文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '店長、副店長、スタッフなど'}
+    )
+
+    level = IntegerField(
+        '階層レベル',
+        validators=[
+            DataRequired(message='階層レベルを入力してください'),
+            NumberRange(min=1, max=999, message='階層レベルは1-999の範囲で入力してください')
+        ],
+        render_kw={'placeholder': '1（最上位）～999', 'min': '1', 'max': '999'}
+    )
+
+    description = TextAreaField(
+        '説明',
+        validators=[Optional()],
+        render_kw={'placeholder': '役職の説明を入力してください', 'rows': 3}
+    )
+
+    is_management = BooleanField(
+        '管理職',
+        validators=[Optional()]
+    )
+
+    salary_min = IntegerField(
+        '最低給与（万円）',
+        validators=[
+            Optional(),
+            NumberRange(min=100, max=2000, message='最低給与は100-2000万円の範囲で入力してください')
+        ],
+        render_kw={'placeholder': '例: 200', 'min': '100', 'max': '2000'}
+    )
+
+    salary_max = IntegerField(
+        '最高給与（万円）',
+        validators=[
+            Optional(),
+            NumberRange(min=100, max=2000, message='最高給与は100-2000万円の範囲で入力してください')
+        ],
+        render_kw={'placeholder': '例: 800', 'min': '100', 'max': '2000'}
+    )
+
+    is_active = BooleanField(
+        'アクティブ',
+        validators=[Optional()],
+        default=True
+    )
+
+    submit = SubmitField('保存')
+
+    def __init__(self, position=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.position = position
+
+    def validate_name(self, name):
+        """役職名の重複チェック"""
+        position = Position.query.filter_by(name=name.data).first()
+        if position and (not self.position or position.id != self.position.id):
+            raise ValidationError('この役職名は既に使用されています。')
+
+    def validate_salary_max(self, salary_max):
+        """給与範囲の妥当性チェック"""
+        if salary_max.data and self.salary_min.data:
+            if salary_max.data < self.salary_min.data:
+                raise ValidationError('最高給与は最低給与以上にしてください。')
+
+
+class DepartmentForm(FlaskForm):
+    """部署登録・編集フォーム"""
+    name = StringField(
+        '部署名',
+        validators=[
+            DataRequired(message='部署名を入力してください'),
+            Length(max=100, message='部署名は100文字以下で入力してください')
+        ],
+        render_kw={'placeholder': '営業部、管理部など'}
+    )
+
+    parent_id = SelectField(
+        '親部署',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    description = TextAreaField(
+        '説明',
+        validators=[Optional()],
+        render_kw={'placeholder': '部署の説明を入力してください', 'rows': 3}
+    )
+
+    head_employee_id = SelectField(
+        '部署長',
+        validators=[Optional()],
+        coerce=lambda x: int(x) if x else None
+    )
+
+    is_active = BooleanField(
+        'アクティブ',
+        validators=[Optional()],
+        default=True
+    )
+
+    submit = SubmitField('保存')
+
+    def __init__(self, department=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.department = department
+
+        # 親部署の選択肢を設定
+        self.parent_id.choices = [('', '親部署なし（ルート部署）')]
+        departments = Department.query.filter_by(is_active=True).order_by(Department.name).all()
+        for dept in departments:
+            # 自分自身は選択肢に含めない
+            if not department or dept.id != department.id:
+                self.parent_id.choices.append((dept.id, dept.full_name))
+
+        # 部署長の選択肢を設定（管理職のみ）
+        self.head_employee_id.choices = [('', '部署長を選択してください（任意）')]
+        managers = Employee.query.join(Position).filter(
+            Employee.employment_status == 'active',
+            Position.is_management == True
+        ).order_by(Employee.last_name, Employee.first_name).all()
+
+        for manager in managers:
+            self.head_employee_id.choices.append((manager.id, f"{manager.full_name} ({manager.position.name})"))
+
+    def validate_parent_id(self, parent_id):
+        """親部署設定の循環参照チェック"""
+        if parent_id.data and self.department:
+            parent = Department.query.get(parent_id.data)
+            if parent and not self.department.can_be_moved_to(parent):
+                raise ValidationError('循環参照となる親部署の設定はできません。')

@@ -6,10 +6,11 @@ from flask_migrate import Migrate
 
 from config import Config
 from customer_config import CustomerConfig
+from employee_config import EmployeeConfig
 from models import db, User
 from product_config import ProductConfig
 from store_config import StoreConfig
-from views import auth, customers, products, stores
+from views import auth, customers, products, stores, employees
 
 def create_app():
     app = Flask(__name__)
@@ -42,12 +43,14 @@ def create_app():
     CustomerConfig.init_app(app)
     ProductConfig.init_app(app)
     StoreConfig.init_app(app)
+    EmployeeConfig.init_app(app)
 
     # Blueprintの登録
     app.register_blueprint(auth, url_prefix='/auth')
     app.register_blueprint(customers, url_prefix='/customers')
     app.register_blueprint(products, url_prefix='/products')
     app.register_blueprint(stores, url_prefix='/stores')
+    app.register_blueprint(employees, url_prefix='/employees')
 
     # メインルート
     @app.route('/')
