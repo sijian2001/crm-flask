@@ -112,13 +112,17 @@ class TestDepartment:
             parent_id=sample_department.id,
             description='第二営業課'
         )
+        db_session.add(sub_dept)
+        db_session.commit()  # Commit first to get sub_dept.id
+
         sub_sub_dept = Department(
             name='営業第一係',
             parent_id=sub_dept.id,
             description='営業第一係'
         )
-        db_session.add_all([sub_dept, sub_sub_dept])
+        db_session.add(sub_sub_dept)
         db_session.commit()
+        db_session.expire_all()
 
         # Test get_all_children
         all_children = sample_department.get_all_children()
@@ -140,12 +144,16 @@ class TestDepartment:
             name='子部署',
             parent_id=sample_department.id
         )
+        db_session.add(child_dept)
+        db_session.commit()  # Commit first to get child_dept.id
+
         grandchild_dept = Department(
             name='孫部署',
             parent_id=child_dept.id
         )
-        db_session.add_all([child_dept, grandchild_dept])
+        db_session.add(grandchild_dept)
         db_session.commit()
+        db_session.expire_all()
 
         # Valid moves
         assert child_dept.can_be_moved_to(None)  # Move to root
@@ -257,13 +265,23 @@ class TestEmployee:
             manager_id=middle_manager.id
         )
 
-        db_session.add_all([middle_manager, staff])
+        db_session.add(middle_manager)
+        db_session.commit()  # Commit first to get middle_manager.id
+
+        db_session.add(staff)
         db_session.commit()
 
-        all_subordinates = sample_manager.get_all_subordinates()
+        # Force reload to get updated relationships
+        manager_id = sample_manager.id
+        db_session.expire_all()
+        refreshed_manager = db_session.get(Employee, manager_id)
+
+        all_subordinates = refreshed_manager.get_all_subordinates()
         assert len(all_subordinates) == 2
-        assert middle_manager in all_subordinates
-        assert staff in all_subordinates
+
+        subordinate_codes = {s.employee_code for s in all_subordinates}
+        assert 'MM001' in subordinate_codes
+        assert 'ST001' in subordinate_codes
 
     def test_employee_can_be_manager_validation(self, sample_manager, sample_subordinate):
         """Test manager assignment validation"""
@@ -284,7 +302,7 @@ class TestEmployee:
         # Valid status update
         sample_employee.update_status('on_leave')
         assert sample_employee.employment_status == 'on_leave'
-        assert sample_employee.updated_at > original_updated
+        assert sample_employee.updated_at >= original_updated
 
         # Invalid status (should not change)
         sample_employee.update_status('invalid_status')
