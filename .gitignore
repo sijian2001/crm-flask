@@ -60,3 +60,8 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+
+# Browser testing
+test_browser*.py
+*.png
+homepage_screenshot.png
